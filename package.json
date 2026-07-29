@@ -1,0 +1,41 @@
+{
+  "name": "cursor-usage-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Resident widget: Cursor Usage breakdown, billing guide, and dashboard deep-links (no on-demand policy)",
+  "license": "MIT",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "start": "node scripts/start-desktop.mjs",
+    "install:resident": "node scripts/install-resident.mjs",
+    "uninstall:resident": "node scripts/uninstall-resident.mjs",
+    "dev": "node scripts/dev-electron.mjs",
+    "dev:web": "node scripts/dev.mjs",
+    "build": "vite build",
+    "server": "node --experimental-sqlite server/index.mjs",
+    "desktop": "node scripts/start-desktop.mjs",
+    "desktop:dev": "node scripts/dev-electron.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "smoke:resident": "node scripts/smoke.mjs --check-resident",
+    "postinstall": "node scripts/fix-rollup-wasm.mjs"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@rollup/wasm-node": "^4.62.2",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.6.0",
+    "electron": "^37.2.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.4"
+  },
+  "overrides": {
+    "rollup": "npm:@rollup/wasm-node@4.62.2"
+  }
+}

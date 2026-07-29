@@ -1,0 +1,11 @@
+node_modules
+dist
+.DS_Store
+*.log
+.env
+.env.*
+release
+out
+.resident.json
+electron-out.log
+electron-err.log
