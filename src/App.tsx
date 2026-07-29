@@ -126,6 +126,14 @@ export default function App() {
               </button>
               <button
                 type="button"
+                className="icon-btn"
+                title="最小化（タスクバー）"
+                onClick={() => void window.cursorMonitor?.minimize?.()}
+              >
+                –
+              </button>
+              <button
+                type="button"
                 className="icon-btn danger"
                 title="トレイに隠す"
                 onClick={() => void window.cursorMonitor?.hide()}

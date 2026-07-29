@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('cursorMonitor', {
   toggleExpanded: () => ipcRenderer.invoke('widget:toggleExpanded'),
   snapRight: () => ipcRenderer.invoke('widget:snapRight'),
   hide: () => ipcRenderer.invoke('widget:hide'),
+  minimize: () => ipcRenderer.invoke('widget:minimize'),
   quit: () => ipcRenderer.invoke('widget:quit'),
   setAutostart: (enabled) => ipcRenderer.invoke('widget:setAutostart', enabled),
   openExternal: (url) => ipcRenderer.invoke('widget:openExternal', url),

@@ -102,12 +102,22 @@ function applySize(nextExpanded) {
   mainWindow.webContents.send('widget:expanded', expanded)
 }
 
+function minimizeWidget() {
+  if (!mainWindow) return
+  // Ensure it can appear on the taskbar when minimized.
+  mainWindow.setSkipTaskbar(false)
+  if (mainWindow.isMinimized()) return
+  mainWindow.minimize()
+}
+
 function showWidget() {
   if (!mainWindow) {
     if (bootUrl) createWindow(bootUrl)
     return
   }
+  if (mainWindow.isMinimized()) mainWindow.restore()
   if (!mainWindow.isVisible()) mainWindow.show()
+  mainWindow.setSkipTaskbar(false)
   mainWindow.focus()
 }
 
@@ -243,6 +253,14 @@ function rebuildTrayMenu() {
       click: () => showWidget(),
     },
     {
+      label: '最小化',
+      click: () => minimizeWidget(),
+    },
+    {
+      label: 'トレイに隠す',
+      click: () => hideWidget(),
+    },
+    {
       label: '右端にスナップ',
       click: () => {
         if (!mainWindow) return
@@ -287,9 +305,9 @@ function createWindow(url) {
     transparent: true,
     resizable: false,
     maximizable: false,
-    minimizable: false,
+    minimizable: true,
     fullscreenable: false,
-    skipTaskbar: true,
+    skipTaskbar: false,
     alwaysOnTop: true,
     hasShadow: true,
     backgroundColor: '#00000000',
@@ -375,6 +393,10 @@ function registerIpc() {
   })
   ipcMain.handle('widget:hide', () => {
     hideWidget()
+    return true
+  })
+  ipcMain.handle('widget:minimize', () => {
+    minimizeWidget()
     return true
   })
   ipcMain.handle('widget:quit', () => {

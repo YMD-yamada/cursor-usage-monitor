@@ -34,3 +34,4 @@ User preference (default): **no on-demand**, prefer plan change when needed, str
 ## Status
 
 - Ops panel + public README/LICENSE ready for sharing (2026-07-29)
+- Minimize to taskbar enabled (– button / tray); × still hides to tray (2026-07-29)

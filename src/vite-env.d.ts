@@ -13,6 +13,7 @@ interface Window {
     toggleExpanded: () => Promise<{ expanded: boolean }>
     snapRight: () => Promise<boolean>
     hide: () => Promise<boolean>
+    minimize: () => Promise<boolean>
     quit: () => Promise<boolean>
     setAutostart?: (enabled: boolean) => Promise<{ autostart: boolean }>
     startDrag?: () => void
