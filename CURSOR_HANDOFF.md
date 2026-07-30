@@ -31,7 +31,16 @@ User preference (default): **no on-demand**, prefer plan change when needed, str
 - `npm start` / `npm run build` / `npm run install:resident`
 - Window: compact 300×300, expanded 380×760
 
+## Usage charts (2026-07-28)
+
+- Compact: 14-day SVG area/line sparkline under hero (`UsageMiniBars`)
+- Expanded: area chart (cost solid + events dashed) + model bars + token mix
+- Data: `usage.charts.daily` from filtered usage events (`server/usage.mjs`)
+
 ## Status
 
 - Ops panel + public README/LICENSE ready for sharing (2026-07-29)
 - Minimize to taskbar enabled (– button / tray); × still hides to tray (2026-07-29)
+- Usage area/line graphs added for compact + expanded views (2026-07-28)
+- User rule + sessionStart hook: Full delegation / operator mode (2026-07-30)
+- Propagated operator-mode to ~/.cursor/rules + 17 git repos + DevHub/Ops standards (2026-07-30)

@@ -875,6 +875,20 @@ button {
   color: var(--warn);
 }
 
+.mini-bars {
+  display: grid;
+  gap: 4px;
+}
+
+.mini-area-svg {
+  display: block;
+  width: 100%;
+  height: 44px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(170, 205, 220, 0.1);
+}
+
 .mini-bars-track {
   display: grid;
   grid-template-columns: repeat(14, minmax(0, 1fr));
@@ -899,8 +913,69 @@ button {
 .mini-bars-meta {
   display: flex;
   justify-content: space-between;
+  gap: 8px;
   font-size: 9px;
   color: var(--muted);
+  min-height: 12px;
+}
+
+.area-chart-wrap {
+  position: relative;
+  border-radius: 10px;
+  border: 1px solid rgba(170, 205, 220, 0.12);
+  background: linear-gradient(
+    180deg,
+    rgba(47, 211, 197, 0.06),
+    rgba(255, 255, 255, 0.02)
+  );
+  overflow: hidden;
+}
+
+.area-chart-svg {
+  display: block;
+  width: 100%;
+  height: 128px;
+}
+
+.chart-grid {
+  stroke: rgba(170, 205, 220, 0.1);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-hover-line {
+  stroke: rgba(122, 208, 255, 0.55);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-axis-label {
+  fill: rgba(142, 163, 176, 0.9);
+  font-size: 8px;
+  font-family: var(--mono);
+}
+
+.chart-tooltip {
+  position: absolute;
+  top: 8px;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 1px;
+  padding: 5px 7px;
+  border-radius: 8px;
+  border: 1px solid rgba(170, 205, 220, 0.2);
+  background: rgba(10, 14, 19, 0.92);
+  font-size: 9px;
+  color: var(--muted);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.chart-tooltip strong {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .compact-empty {

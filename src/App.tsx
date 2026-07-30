@@ -171,7 +171,9 @@ export default function App() {
       {usage?.charts?.daily?.length ? (
         <UsageMiniBars daily={usage.charts.daily} />
       ) : (
-        <p className="chart-empty compact-empty">Usage グラフ待機中…</p>
+        <p className="chart-empty compact-empty">
+          Usage グラフ待機中…（展開後に詳細グラフ）
+        </p>
       )}
 
       <div className="share-block" title={ramTitle}>
