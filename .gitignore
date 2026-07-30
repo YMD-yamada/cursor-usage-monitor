@@ -9,3 +9,4 @@ out
 .resident.json
 electron-out.log
 electron-err.log
+scripts/probe-*.mjs

@@ -127,14 +127,16 @@ async function probe(port) {
   )
 
   const account = await getJson(`${base}/api/account`)
-  const emailHint = account.json?.email
-    ? `${String(account.json.email).slice(0, 3)}…`
-    : '(none)'
+  const accountOk =
+    account.status === 200 &&
+    account.json?.signedIn === true &&
+    !account.json?.email &&
+    !account.json?.userId
   record(
     'GET /api/account',
-    account.status === 200 && Boolean(account.json?.email || account.json?.userId),
+    accountOk,
     account.status === 200
-      ? `email=${emailHint} membership=${account.json?.membershipType || '?'}`
+      ? `signedIn=${Boolean(account.json?.signedIn)} membership=${account.json?.membershipType || '?'}`
       : `status=${account.status} ${account.json?.error || ''}`,
   )
 
@@ -164,12 +166,19 @@ async function probe(port) {
   const usage = await getJson(`${base}/api/usage`, 20_000)
   const usageOk =
     usage.status === 200 &&
-    (usage.json?.period || usage.json?.charts || usage.json?.totalCost != null)
+    (usage.json?.charts ||
+      usage.json?.spend ||
+      usage.json?.breakdown ||
+      usage.json?.period ||
+      usage.json?.totalCost != null)
+  const accountRedacted =
+    !usage.json?.account?.email ||
+    usage.json.account.email === '[redacted]'
   record(
     'GET /api/usage',
-    usageOk,
+    usageOk && accountRedacted,
     usage.status === 200
-      ? `cached=${Boolean(usage.json?.cached)} keys=${Object.keys(usage.json || {}).slice(0, 6).join(',')}`
+      ? `cached=${Boolean(usage.json?.cached)} redact=${accountRedacted} keys=${Object.keys(usage.json || {}).slice(0, 6).join(',')}`
       : `status=${usage.status} ${usage.json?.error || usage.body?.slice(0, 120) || ''}`,
   )
 }
