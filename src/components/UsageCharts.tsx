@@ -384,13 +384,12 @@ function ModelShare({ models }: { models: ModelUsage[] }) {
                   />
                   <span className="name">
                     <span
-                      className={`model-tag ${m.category === 'named' ? 'named' : 'auto'}`}
+                      className={`model-tag ${m.pool === 'other' || m.category === 'named' ? 'named' : 'auto'}`}
                     >
-                      {m.category === 'named' ? '外部' : '自動'}
+                      {m.pool === 'other' || (m.category === 'named' && m.billingLane !== 'auto')
+                        ? 'Other'
+                        : 'Cursor'}
                     </span>
-                    {m.category === 'named' && m.billingLane === 'auto' ? (
-                      <span className="model-tag lane">Auto枠</span>
-                    ) : null}
                     {shortModel(m.model)}
                   </span>
                   <span className="mono val">{formatUsd(m.costUsd)}</span>
@@ -461,25 +460,33 @@ export function UsageCharts({ usage, compact = false }: Props) {
     return <UsageMiniBars daily={daily} />
   }
 
-  const planPercent =
-    usage.breakdown?.included.percent ??
-    usage.spend.includedPercent ??
-    usage.spend.percentUsed
+  const cursorPercent = clampPercent(
+    usage.breakdown?.cursorModels?.percent ??
+      usage.breakdown?.auto?.percent ??
+      usage.spend.autoPercentUsed ??
+      0,
+  )
+  const otherPercent = clampPercent(
+    usage.breakdown?.otherModels?.percent ??
+      usage.breakdown?.named?.percent ??
+      usage.spend.apiPercentUsed ??
+      0,
+  )
+  const ringPercent = Math.max(cursorPercent, otherPercent)
 
   return (
     <div className="usage-charts">
       <div className="usage-overview">
-        <UsageRing percent={planPercent} />
+        <UsageRing percent={ringPercent} />
         <div className="usage-overview-copy">
-          <p className="hero-label">プラン枠</p>
+          <p className="hero-label">公式プール</p>
           <p className="overview-spend mono">
-            {formatUsd(usage.spend.includedUsd)} /{' '}
-            {formatUsd(usage.spend.limitUsd || usage.spend.includedUsd)}
+            CM {cursorPercent.toFixed(0)}% · OM {otherPercent.toFixed(0)}%
           </p>
           <p className="overview-meta mono">
-            合計 {formatUsd(usage.spend.totalUsd)}
+            従量 {usage.breakdown?.onDemand.allowed ? 'ON' : 'OFF'}
             {usage.spend.bonusUsd > 0
-              ? ` · ボーナス ${formatUsd(usage.spend.bonusUsd)}`
+              ? ` · ボーナス会計 ${formatUsd(usage.spend.bonusUsd)}`
               : ''}
           </p>
           {usage.charts?.eventsTotal != null && (

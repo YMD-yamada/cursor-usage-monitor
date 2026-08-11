@@ -129,8 +129,7 @@ export function BillingGuide({ usage }: Props) {
       {tab === 'billing' && (
         <div className="guide-panel">
           <p className="guide-intro">
-            Cursor は Claude のような「1本の無料枠」ではありません。保証枠 → ボーナス →
-            従量 → 月次リセット、の順です。
+            公式どおり利用枠は Cursor Models と Other Models の2プールです。合算の1本％はありません。超過後は従量、または月次リセットです。
           </p>
 
           {guide.bonusExplainer && (

@@ -164,8 +164,15 @@ async function probe(port) {
   )
 
   const usage = await getJson(`${base}/api/usage`, 20_000)
+  const bd = usage.json?.breakdown
+  const hasPools =
+    (typeof bd?.cursorModels?.percent === 'number' ||
+      typeof bd?.auto?.percent === 'number') &&
+    (typeof bd?.otherModels?.percent === 'number' ||
+      typeof bd?.named?.percent === 'number')
   const usageOk =
     usage.status === 200 &&
+    hasPools &&
     (usage.json?.charts ||
       usage.json?.spend ||
       usage.json?.breakdown ||
@@ -174,11 +181,13 @@ async function probe(port) {
   const accountRedacted =
     !usage.json?.account?.email ||
     usage.json.account.email === '[redacted]'
+  const cm = bd?.cursorModels?.percent ?? bd?.auto?.percent
+  const om = bd?.otherModels?.percent ?? bd?.named?.percent
   record(
     'GET /api/usage',
     usageOk && accountRedacted,
     usage.status === 200
-      ? `cached=${Boolean(usage.json?.cached)} redact=${accountRedacted} keys=${Object.keys(usage.json || {}).slice(0, 6).join(',')}`
+      ? `cached=${Boolean(usage.json?.cached)} pools=CM:${cm}%/OM:${om}% redact=${accountRedacted}`
       : `status=${usage.status} ${usage.json?.error || usage.body?.slice(0, 120) || ''}`,
   )
 }

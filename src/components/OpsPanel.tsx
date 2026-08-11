@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { UsagePayload } from '../lib/format'
-import { formatUsd } from '../lib/format'
 import { CURSOR_LINKS, openCursorLink } from '../lib/cursorLinks'
 import {
   DEFAULT_OPS_PREFS,
@@ -65,8 +64,21 @@ export function OpsPanel({ usage }: Props) {
   }
 
   const onDemandOn = Boolean(usage.breakdown?.onDemand.allowed)
-  const exhausted = Boolean(usage.breakdown?.included.exhausted)
-  const bonusActive = Boolean(usage.breakdown?.bonus.active)
+  const cursorPct =
+    usage.breakdown?.cursorModels?.percent ??
+    usage.breakdown?.auto?.percent ??
+    usage.spend.autoPercentUsed ??
+    0
+  const otherPct =
+    usage.breakdown?.otherModels?.percent ??
+    usage.breakdown?.named?.percent ??
+    usage.spend.apiPercentUsed ??
+    0
+  const poolsExhausted =
+    Boolean(usage.breakdown?.cursorModels?.exhausted) ||
+    Boolean(usage.breakdown?.otherModels?.exhausted) ||
+    cursorPct >= 99.5 ||
+    otherPct >= 99.5
   const planName = usage.account.membershipType || 'plan'
 
   const actions = useMemo(() => {
@@ -89,20 +101,18 @@ export function OpsPanel({ usage }: Props) {
         id: 'ondemand-ok',
         title: '従量課金は OFF（方針どおり）',
         detail:
-          '枠＋ボーナスの範囲で運用中。変更や確認は Spending からできます。',
+          'Cursor Models / Other Models の枠内で運用中。変更や確認は Spending からできます。',
         href: CURSOR_LINKS.spending,
         tone: 'ok',
         cta: 'Spending を開く',
       })
     }
 
-    if (prefs.preferPlanChange && exhausted) {
+    if (prefs.preferPlanChange && poolsExhausted) {
       list.push({
         id: 'consider-upgrade',
-        title: 'プラン枠を使い切りました',
-        detail: bonusActive
-          ? `いまはボーナス ${formatUsd(usage.spend.bonusUsd)} で継続中（保証外）。足りなければプラン変更を検討。`
-          : 'ボーナスも薄い／なし。従量なし方針なら Pro+ / Ultra への変更が本筋です。',
+        title: 'プールが上限付近です',
+        detail: `CM ${cursorPct.toFixed(0)}% · OM ${otherPct.toFixed(0)}%。従量なし方針なら Pro+ / Ultra への変更を検討。`,
         href: CURSOR_LINKS.billing,
         tone: 'warn',
         cta: 'Billing でプラン変更',
@@ -134,9 +144,9 @@ export function OpsPanel({ usage }: Props) {
   }, [
     prefs,
     onDemandOn,
-    exhausted,
-    bonusActive,
-    usage.spend.bonusUsd,
+    poolsExhausted,
+    cursorPct,
+    otherPct,
     planName,
   ])
 
@@ -156,7 +166,7 @@ export function OpsPanel({ usage }: Props) {
           />
           <span>
             <strong>従量課金は使わない</strong>
-            <em>枠＋ボーナス中心。超過課金を避ける</em>
+            <em>両プール中心。超過課金を避ける</em>
           </span>
         </label>
         <label className="ops-check">
@@ -197,15 +207,12 @@ export function OpsPanel({ usage }: Props) {
             </span>
           </div>
           <div>
-            <span className="ops-live-label">プラン枠</span>
-            <span className="mono">
-              {formatUsd(usage.spend.includedUsd)} /{' '}
-              {formatUsd(usage.spend.limitUsd)}
-            </span>
+            <span className="ops-live-label">Cursor Models</span>
+            <span className="mono">{cursorPct.toFixed(0)}%</span>
           </div>
           <div>
-            <span className="ops-live-label">ボーナス</span>
-            <span className="mono">{formatUsd(usage.spend.bonusUsd)}</span>
+            <span className="ops-live-label">Other Models</span>
+            <span className="mono">{otherPct.toFixed(0)}%</span>
           </div>
         </div>
       </div>

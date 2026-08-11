@@ -1,6 +1,6 @@
 /** Official Cursor pages any user can open from the widget. */
 export const CURSOR_LINKS = {
-  usage: 'https://cursor.com/dashboard?tab=usage',
+  usage: 'https://cursor.com/dashboard/usage',
   spending: 'https://cursor.com/dashboard/spending',
   billing: 'https://cursor.com/dashboard/billing',
   pricing: 'https://cursor.com/pricing',

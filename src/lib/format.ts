@@ -1,7 +1,9 @@
 export type ModelCategory = 'auto' | 'named'
+export type ModelPool = 'cursor' | 'other'
 
 export type ModelUsage = {
   model: string
+  pool?: ModelPool
   category?: ModelCategory
   billingLane?: ModelCategory
   inputTokens: number
@@ -12,7 +14,19 @@ export type ModelUsage = {
   tier: number | null
 }
 
+export type PoolBreakdown = {
+  label: string
+  hint: string
+  percent: number
+  costUsd: number
+  exhausted?: boolean
+  message: string | null
+}
+
 export type UsageBreakdown = {
+  /** Official primary pools (Spending / Usage dashboard). */
+  cursorModels?: PoolBreakdown
+  otherModels?: PoolBreakdown
   included: {
     label: string
     hint: string
@@ -30,26 +44,17 @@ export type UsageBreakdown = {
     active: boolean
     message: string | null
   }
-  auto: {
-    label: string
-    hint: string
-    percent: number
-    costUsd: number
-    message: string | null
-  }
-  named: {
-    label: string
-    hint: string
-    percent: number
-    costUsd: number
-    onAutoLaneUsd?: number
-    message: string | null
-  }
+  /** @deprecated alias of cursorModels */
+  auto: PoolBreakdown
+  /** @deprecated alias of otherModels */
+  named: PoolBreakdown & { onAutoLaneUsd?: number }
   onDemand: {
     label: string
     allowed: boolean
     status: string
     hint: string
+    usedUsd?: number
+    limitUsd?: number | null
   }
 }
 
@@ -158,10 +163,12 @@ export type UsagePayload = {
     bonusUsd: number
     limitUsd: number
     remainingUsd: number
+    /** max(cursor, other) — not an official combined bar */
     percentUsed: number
     includedPercent?: number
     autoPercentUsed: number
     apiPercentUsed: number
+    totalPercentUsed?: number
   }
   breakdown?: UsageBreakdown
   guide?: UsageGuide

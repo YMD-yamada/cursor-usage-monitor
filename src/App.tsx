@@ -33,13 +33,25 @@ export default function App() {
     return window.cursorMonitor.onExpanded(setExpanded)
   }, [])
 
-  const planPct = clampPercent(
-    usage?.breakdown?.included.percent ??
-      usage?.spend.includedPercent ??
-      usage?.spend.percentUsed ??
+  const cursorPct = clampPercent(
+    usage?.breakdown?.cursorModels?.percent ??
+      usage?.breakdown?.auto?.percent ??
+      usage?.spend.autoPercentUsed ??
       0,
   )
-  const planExhausted = Boolean(usage?.breakdown?.included.exhausted)
+  const otherPct = clampPercent(
+    usage?.breakdown?.otherModels?.percent ??
+      usage?.breakdown?.named?.percent ??
+      usage?.spend.apiPercentUsed ??
+      0,
+  )
+  // Official UI has no single combined bar; hero highlights the hotter pool.
+  const heroPct = Math.max(cursorPct, otherPct)
+  const heroPool = otherPct > cursorPct ? 'Other Models' : 'Cursor Models'
+  const poolsHot =
+    Boolean(usage?.breakdown?.cursorModels?.exhausted) ||
+    Boolean(usage?.breakdown?.otherModels?.exhausted) ||
+    heroPct >= 99.5
   const sysCpu = clampPercent(metrics?.cpu.loadPercent ?? 0)
   const sysMem = clampPercent(metrics?.memory.usedPercent ?? 0)
   const cursorMemPct = clampPercent(metrics?.cursor.memPercent ?? 0)
@@ -48,7 +60,7 @@ export default function App() {
   const counts = tasks?.counts
 
   const usageTone =
-    planExhausted || planPct >= 90 ? 'danger' : planPct >= 70 ? 'warn' : 'ok'
+    poolsHot || heroPct >= 90 ? 'danger' : heroPct >= 70 ? 'warn' : 'ok'
 
   const statusLine = useMemo(() => {
     if (usageError) return usageError
@@ -56,12 +68,10 @@ export default function App() {
     if (tasksError) return tasksError
     if (!usage?.breakdown) return usage?.billing.autoMessage || 'Cursor monitor'
     const b = usage.breakdown
-    if (b.included.exhausted) {
-      return `プラン枠使い切り · ボーナス ${formatUsd(b.bonus.usedUsd)} · 従量 ${b.onDemand.status}`
-    }
-    return `プラン枠 残 ${formatUsd(b.included.remainingUsd)} · Auto ${b.auto.percent.toFixed(0)}% · 外部 ${formatUsd(b.named.costUsd)}`
+    const cm = b.cursorModels?.percent ?? b.auto.percent
+    const om = b.otherModels?.percent ?? b.named.percent
+    return `Cursor Models ${cm.toFixed(0)}% · Other Models ${om.toFixed(0)}% · 従量 ${b.onDemand.status}`
   }, [usage, usageError, metricsError, tasksError])
-
   const taskSummary = useMemo(() => {
     if (!counts) return '…'
     const parts = []
@@ -147,19 +157,23 @@ export default function App() {
 
       <button type="button" className="hero-hit" onClick={() => void toggle()}>
         <div className={`usage-big tone-${usageTone}`}>
-          <span className="usage-num">{usage ? planPct.toFixed(0) : '—'}</span>
+          <span className="usage-num">{usage ? heroPct.toFixed(0) : '—'}</span>
           <span className="usage-unit">%</span>
         </div>
         <div className="hero-side">
-          <p className="hero-label">プラン枠</p>
+          <p className="hero-label">{usage ? heroPool : 'Usage'}</p>
           <p className="hero-spend">
             {usage
-              ? `${formatUsd(usage.spend.includedUsd)} / ${formatUsd(usage.spend.limitUsd || usage.spend.includedUsd)}${planExhausted ? ' · 使い切り' : ''}`
+              ? `CM ${cursorPct.toFixed(0)}% · OM ${otherPct.toFixed(0)}%`
               : '…'}
           </p>
           <p className="hero-meta mono">
             {usage
-              ? `ボーナス ${formatUsd(usage.spend.bonusUsd)} · 外部 ${formatUsd(usage.breakdown?.named.costUsd ?? 0)}`
+              ? `従量 ${usage.breakdown?.onDemand.allowed ? 'ON' : 'OFF'}${
+                  usage.spend.bonusUsd > 0
+                    ? ` · ボーナス会計 ${formatUsd(usage.spend.bonusUsd)}`
+                    : ''
+                }`
               : `CPU ${sysCpu.toFixed(0)}% · Tasks ${taskSummary}`}
           </p>
         </div>

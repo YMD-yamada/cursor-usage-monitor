@@ -12,6 +12,22 @@ function toneFor(percent: number, exhausted?: boolean) {
   return 'ok'
 }
 
+function poolsOf(usage: UsagePayload) {
+  const b = usage.breakdown
+  const cursor = b?.cursorModels ?? b?.auto
+  const other = b?.otherModels ?? b?.named
+  return {
+    cursorPct: clampPercent(cursor?.percent ?? usage.spend.autoPercentUsed ?? 0),
+    otherPct: clampPercent(other?.percent ?? usage.spend.apiPercentUsed ?? 0),
+    cursorCost: cursor?.costUsd ?? 0,
+    otherCost: other?.costUsd ?? 0,
+    cursorMsg: cursor?.message ?? usage.billing.autoMessage,
+    otherMsg: other?.message ?? usage.billing.apiMessage,
+    cursorExhausted: Boolean(cursor?.exhausted),
+    otherExhausted: Boolean(other?.exhausted),
+  }
+}
+
 function MeterRow({
   label,
   detail,
@@ -42,49 +58,44 @@ function MeterRow({
   )
 }
 
-/** Compact strip: plan quota + bonus + auto/named. */
+/** Compact strip: official two pools (Cursor Models / Other Models). */
 export function UsageBucketStrip({ usage }: { usage: UsagePayload }) {
   const b = usage.breakdown
   if (!b) return null
-  const includedPct = clampPercent(b.included.percent)
-  const spendTotal = Math.max(usage.spend.totalUsd, 0.01)
-  const includedShare = (b.included.usedUsd / spendTotal) * 100
-  const bonusShare = (b.bonus.usedUsd / spendTotal) * 100
+  const p = poolsOf(usage)
 
   return (
     <div className="bucket-strip">
       <div className="bucket-strip-head">
-        <span>プラン枠 {includedPct.toFixed(0)}%</span>
+        <span>公式プール</span>
         <span className="mono">
-          {formatUsd(b.included.usedUsd)} / {formatUsd(b.included.limitUsd)}
-          {b.included.exhausted ? ' · 使い切り' : ''}
+          CM {p.cursorPct.toFixed(0)}% · OM {p.otherPct.toFixed(0)}%
         </span>
       </div>
-      <div
-        className="bucket-spend-track"
-        title={`プラン枠 ${formatUsd(b.included.usedUsd)} · ボーナス ${formatUsd(b.bonus.usedUsd)}`}
-      >
-        <span
-          className="seg included"
-          style={{ width: `${Math.max(includedShare, b.included.usedUsd > 0 ? 4 : 0)}%` }}
-        />
-        <span
-          className="seg bonus"
-          style={{ width: `${Math.max(bonusShare, b.bonus.usedUsd > 0 ? 4 : 0)}%` }}
-        />
-      </div>
+      <MeterRow
+        label="Cursor Models"
+        detail={`${p.cursorPct.toFixed(0)}%`}
+        percent={p.cursorPct}
+        tone={toneFor(p.cursorPct, p.cursorExhausted)}
+        title={p.cursorMsg || undefined}
+      />
+      <MeterRow
+        label="Other Models"
+        detail={`${p.otherPct.toFixed(0)}%`}
+        percent={p.otherPct}
+        tone={toneFor(p.otherPct, p.otherExhausted)}
+        title={p.otherMsg || undefined}
+      />
       <div className="bucket-strip-meta mono">
         <span>
-          <i className="swatch included" />
-          枠内 {formatUsd(b.included.usedUsd)}
+          従量 {b.onDemand.allowed ? 'ON' : 'OFF'}
         </span>
-        <span>
-          <i className="swatch bonus" />
-          ボーナス {formatUsd(b.bonus.usedUsd)}
-        </span>
-        <span>
-          外部 {formatUsd(b.named.costUsd)}
-        </span>
+        {b.bonus.active ? (
+          <span>
+            <i className="swatch bonus" />
+            ボーナス会計 {formatUsd(b.bonus.usedUsd)}
+          </span>
+        ) : null}
       </div>
     </div>
   )
@@ -98,61 +109,38 @@ export function UsageBuckets({ usage, compact = false }: Props) {
     return <UsageBucketStrip usage={usage} />
   }
 
-  const includedTone = toneFor(b.included.percent, b.included.exhausted)
-  const spendTotal = Math.max(
-    b.included.usedUsd + b.bonus.usedUsd,
-    usage.spend.totalUsd,
-    0.01,
-  )
+  const p = poolsOf(usage)
 
   return (
     <div className="usage-buckets">
       <div className="chart-block">
         <div className="chart-head">
-          <span>Usage 内訳</span>
-          <span className="mono">合計 {formatUsd(usage.spend.totalUsd)}</span>
+          <span>Usage プール（公式と同じ）</span>
+          <span className="mono">
+            CM {p.cursorPct.toFixed(0)}% · OM {p.otherPct.toFixed(0)}%
+          </span>
         </div>
         <p className="bucket-lead">
-          Cursor は「プラン枠」と「ボーナス（提供側無料）」が別です。大きな％だけだと
-          Claude の枠のように見えません。
+          公式ダッシュボードは Cursor Models と Other Models
+          の2本％です。合算の1本％はありません。
         </p>
 
         <MeterRow
-          label="プラン枠"
-          detail={`${formatUsd(b.included.usedUsd)} / ${formatUsd(b.included.limitUsd)} · ${b.included.percent.toFixed(0)}%`}
-          percent={b.included.percent}
-          tone={includedTone}
-          title={b.included.hint}
+          label="Cursor Models"
+          detail={`${p.cursorPct.toFixed(0)}%`}
+          percent={p.cursorPct}
+          tone={toneFor(p.cursorPct, p.cursorExhausted)}
+          title={p.cursorMsg || b.cursorModels?.hint || b.auto.hint}
         />
         <MeterRow
-          label="Auto / Composer"
-          detail={`${b.auto.percent.toFixed(0)}% · ${formatUsd(b.auto.costUsd)}`}
-          percent={b.auto.percent}
-          tone={toneFor(b.auto.percent)}
-          title={b.auto.message || b.auto.hint}
+          label="Other Models"
+          detail={`${p.otherPct.toFixed(0)}%`}
+          percent={p.otherPct}
+          tone={toneFor(p.otherPct, p.otherExhausted)}
+          title={p.otherMsg || b.otherModels?.hint || b.named.hint}
         />
-        <MeterRow
-          label="外部モデル"
-          detail={`API枠 ${b.named.percent.toFixed(0)}% · 実コスト ${formatUsd(b.named.costUsd)}`}
-          percent={b.named.percent}
-          tone={toneFor(b.named.percent)}
-          title={b.named.message || b.named.hint}
-        />
-        {b.named.onAutoLaneUsd && b.named.onAutoLaneUsd > 0 ? (
-          <p className="bucket-note">
-            外部モデルのうち {formatUsd(b.named.onAutoLaneUsd)} は Auto
-            枠側で消化（見た目は外部でも課金レーンは Auto）。
-          </p>
-        ) : null}
 
         <div className="bucket-cards">
-          <div className="bucket-card" title={b.bonus.hint}>
-            <span className="bucket-card-label">ボーナス</span>
-            <span className="bucket-card-value mono">{formatUsd(b.bonus.usedUsd)}</span>
-            <span className="bucket-card-note">
-              {b.bonus.active ? '提供側の追加無料' : 'なし'}
-            </span>
-          </div>
           <div className="bucket-card" title={b.onDemand.hint}>
             <span className="bucket-card-label">従量課金</span>
             <span
@@ -164,36 +152,29 @@ export function UsageBuckets({ usage, compact = false }: Props) {
               {b.onDemand.allowed ? '枠超過後も継続可' : '枠超過後は停止'}
             </span>
           </div>
+          <div className="bucket-card" title={b.bonus.hint}>
+            <span className="bucket-card-label">ボーナス会計</span>
+            <span className="bucket-card-value mono">{formatUsd(b.bonus.usedUsd)}</span>
+            <span className="bucket-card-note">
+              {b.bonus.active ? '保証外の追加無料' : 'なし'}
+            </span>
+          </div>
         </div>
 
         <div className="chart-head tight">
-          <span>コストの内訳</span>
+          <span>Included 会計（参考）</span>
           <span className="mono">
-            枠内 {(b.included.usedUsd / spendTotal * 100).toFixed(0)}% · ボーナス{' '}
-            {(b.bonus.usedUsd / spendTotal * 100).toFixed(0)}%
+            {formatUsd(b.included.usedUsd)} / {formatUsd(b.included.limitUsd)}
           </span>
         </div>
-        <div className="bucket-spend-track tall">
-          <span
-            className="seg included"
-            style={{
-              width: `${(b.included.usedUsd / spendTotal) * 100}%`,
-            }}
-            title={`プラン枠 ${formatUsd(b.included.usedUsd)}`}
-          />
-          <span
-            className="seg bonus"
-            style={{
-              width: `${(b.bonus.usedUsd / spendTotal) * 100}%`,
-            }}
-            title={`ボーナス ${formatUsd(b.bonus.usedUsd)}`}
-          />
-        </div>
-        {(b.included.message || b.auto.message || b.named.message) && (
+        <p className="bucket-note">
+          個人プランの公式 Usage は％／トークン中心です。Included $
+          は会計上の数字で、主バーではありません。
+        </p>
+
+        {(p.cursorMsg || p.otherMsg) && (
           <p className="bucket-messages">
-            {[b.included.message, b.auto.message, b.named.message]
-              .filter(Boolean)
-              .join(' / ')}
+            {[p.cursorMsg, p.otherMsg].filter(Boolean).join(' / ')}
           </p>
         )}
       </div>
