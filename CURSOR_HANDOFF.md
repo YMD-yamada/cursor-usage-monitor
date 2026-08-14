@@ -50,7 +50,13 @@ Default UX nudges: **no on-demand**, stretch base plan via Cursor Models, plan c
 
 
 
-- Public GitHub MIT app
+- Public GitHub MIT: https://github.com/YMD-yamada/cursor-usage-monitor
+
+- Portfolio (仕事): https://ymd-portfolio-site.pages.dev/
+
+- This PC: `npm run install:resident` (Startup + Start Menu). Smoke 2026-08-14: 7/7, signedIn Pro, CM ~32% / OM 0%.
+
+- Store hub: not listed (GitHub MIT widget, not App Store / Play / MS Store)
 
 - **Aligned with official 2026 dashboard**: primary display is two pools — **Cursor Models** (`autoPercentUsed`) and **Other Models** (`apiPercentUsed`). Included $ / bonus are secondary accounting only (official Usage no longer leads with a single combined % or $ for self-serve).
 
