@@ -1,93 +1,92 @@
-import type { UsagePayload } from '../lib/format'
-import {
-  clampPercent,
-  formatDate,
-  formatTokens,
-  formatUsd,
-} from '../lib/format'
-import { Meter } from './Meter'
+import { clampPercent } from '../lib/format'
 
-type Props = {
-  usage: UsagePayload | null
+type Tone = 'ok' | 'warn' | 'danger'
+
+function toneFor(percent: number, exhausted?: boolean): Tone {
+  if (exhausted || percent >= 90) return 'danger'
+  if (percent >= 70) return 'warn'
+  return 'ok'
 }
 
-export function UsageHero({ usage }: Props) {
-  if (!usage) {
-    return (
-      <section className="hero panel">
-        <p className="eyebrow">Cursor Usage</p>
-        <h1 className="hero-title">読み込み中…</h1>
-      </section>
-    )
-  }
-
-  const pct = clampPercent(usage.spend.percentUsed)
-  const planLabel = (usage.account.membershipType || 'plan').toUpperCase()
+function PoolMark({
+  label,
+  percent,
+  exhausted,
+}: {
+  label: string
+  percent: number
+  exhausted?: boolean
+}) {
+  const pct = clampPercent(percent)
+  const tone = toneFor(pct, exhausted)
+  const r = 26
+  const c = 2 * Math.PI * r
+  const offset = c * (1 - pct / 100)
 
   return (
-    <section className="hero panel">
-      <div className="hero-copy">
-        <p className="eyebrow">Cursor Usage</p>
-        <h1 className="hero-title">
-          {pct.toFixed(1)}%
-          <span className="hero-title-muted"> used this cycle</span>
-        </h1>
-        <p className="hero-lead">
-          {usage.account.name || usage.account.email || 'Signed-in account'} ·{' '}
-          {planLabel}
-          {usage.account.subscriptionStatus
-            ? ` · ${usage.account.subscriptionStatus}`
-            : ''}
-        </p>
-        <p className="hero-note">
-          {usage.billing.autoMessage ||
-            usage.billing.displayMessage ||
-            '現在の請求サイクルの利用状況'}
-        </p>
-        <p className="hero-spendline">
-          Spend {formatUsd(usage.spend.totalUsd)}
-          <span className="sep">·</span>
-          Included {formatUsd(usage.spend.includedUsd)} /{' '}
-          {formatUsd(usage.spend.limitUsd || usage.spend.includedUsd)}
-          <span className="sep">·</span>
-          Bonus {formatUsd(usage.spend.bonusUsd)}
-        </p>
-      </div>
-
-      <div className="hero-metrics">
-        <Meter
-          label="Included usage"
-          value={pct}
-          detail={`${pct.toFixed(1)}% used`}
-          tone={pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : 'ok'}
-        />
-        <div className="stat-grid">
-          <Stat label="Included" value={formatUsd(usage.spend.includedUsd)} />
-          <Stat label="Bonus" value={formatUsd(usage.spend.bonusUsd)} />
-          <Stat label="Input tokens" value={formatTokens(usage.tokens.input)} />
-          <Stat
-            label="Output tokens"
-            value={formatTokens(usage.tokens.output)}
+    <div className={`pool-mark tone-${tone}`}>
+      <div className="pool-mark-ring" aria-hidden="true">
+        <svg viewBox="0 0 72 72">
+          <circle className="ring-track" cx="36" cy="36" r={r} />
+          <circle
+            className="ring-fill"
+            cx="36"
+            cy="36"
+            r={r}
+            strokeDasharray={c}
+            strokeDashoffset={offset}
+            transform="rotate(-90 36 36)"
           />
-          <Stat
-            label="Cycle"
-            value={`${formatDate(usage.billing.cycleStart)} → ${formatDate(usage.billing.cycleEnd)}`}
-          />
-          <Stat
-            label="On-demand"
-            value={usage.billing.noUsageBasedAllowed ? 'Blocked' : 'Allowed'}
-          />
+        </svg>
+        <div className="pool-mark-value">
+          <span className="pool-mark-num">{pct.toFixed(0)}</span>
+          <span className="pool-mark-unit">%</span>
         </div>
       </div>
-    </section>
+      <span className="pool-mark-label">{label}</span>
+    </div>
   )
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+type Props = {
+  cursorPct: number
+  otherPct: number
+  cursorExhausted?: boolean
+  otherExhausted?: boolean
+  onDemandAllowed?: boolean
+  loading?: boolean
+  onToggle?: () => void
+}
+
+/** Compact hero: official two pools, no fake combined %. */
+export function DualPoolHero({
+  cursorPct,
+  otherPct,
+  cursorExhausted,
+  otherExhausted,
+  onDemandAllowed,
+  loading,
+  onToggle,
+}: Props) {
   return (
-    <div className="stat">
-      <span className="stat-label">{label}</span>
-      <span className="stat-value">{value}</span>
-    </div>
+    <button type="button" className="pool-hero" onClick={() => onToggle?.()}>
+      <div className="pool-hero-grid">
+        <PoolMark
+          label="Cursor Models"
+          percent={loading ? 0 : cursorPct}
+          exhausted={cursorExhausted}
+        />
+        <PoolMark
+          label="Other Models"
+          percent={loading ? 0 : otherPct}
+          exhausted={otherExhausted}
+        />
+      </div>
+      <p className="pool-hero-meta">
+        {loading
+          ? 'Usage を読み込み中…'
+          : `従量 ${onDemandAllowed ? 'ON' : 'OFF'} · 公式と同じ2プール`}
+      </p>
+    </button>
   )
 }

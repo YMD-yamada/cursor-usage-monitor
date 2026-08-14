@@ -1,17 +1,18 @@
 :root {
   color-scheme: dark;
-  --bg: rgba(14, 20, 27, 0.92);
-  --line: rgba(170, 205, 220, 0.16);
-  --text: #e8eef3;
-  --muted: #8ea3b0;
-  --accent: #2fd3c5;
-  --accent-2: #7ad0ff;
-  --warn: #e2b45a;
-  --danger: #ef7d6a;
-  --other: #5b7c99;
-  --free: rgba(255, 255, 255, 0.1);
-  --font: 'DM Sans', sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --bg: rgba(16, 20, 26, 0.78);
+  --line: rgba(210, 228, 236, 0.12);
+  --text: #f2f6f8;
+  --muted: #9aafbb;
+  --accent: #3ee0d0;
+  --accent-2: #8fd4ff;
+  --warn: #e8c07a;
+  --danger: #f08b7a;
+  --other: #6b86a3;
+  --free: rgba(255, 255, 255, 0.08);
+  --font: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  --mono: 'Cascadia Mono', 'Segoe UI Mono', ui-monospace, monospace;
+  --radius: 16px;
 }
 
 * {
@@ -45,17 +46,22 @@ button {
 
 .widget {
   height: 100%;
-  margin: 3px;
-  padding: 8px 10px 10px;
-  border-radius: 14px;
+  margin: 4px;
+  padding: 10px 12px 12px;
+  border-radius: var(--radius);
   border: 1px solid var(--line);
-  background: linear-gradient(165deg, rgba(22, 31, 40, 0.96), rgba(10, 14, 19, 0.94));
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 28%),
+    linear-gradient(165deg, rgba(24, 32, 42, 0.92), rgba(10, 13, 18, 0.94));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 14px 36px rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   animation: pop 220ms ease both;
   overflow: hidden;
+  backdrop-filter: blur(18px);
 }
 
 @keyframes pop {
@@ -92,44 +98,144 @@ button {
 }
 
 .brand-mark {
-  width: 16px;
-  height: 16px;
-  border-radius: 5px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #06201d;
-  font-size: 10px;
-  font-weight: 700;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: conic-gradient(from 210deg, var(--accent), var(--accent-2), var(--accent));
+  box-shadow: 0 0 0 3px rgba(62, 224, 208, 0.12);
 }
 
 .brand-text {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--muted);
+  letter-spacing: 0.01em;
+  color: var(--text);
 }
 
 .chrome-actions {
   display: flex;
-  gap: 1px;
+  gap: 2px;
   flex-shrink: 0;
 }
 
 .icon-btn {
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
   color: var(--muted);
-  line-height: 1;
+  display: grid;
+  place-items: center;
 }
 
 .icon-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text);
 }
 
 .icon-btn.danger:hover {
   color: var(--danger);
+  background: rgba(240, 139, 122, 0.12);
+}
+
+.pool-hero {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  width: 100%;
+  border-radius: 12px;
+  padding: 8px 6px 6px;
+}
+
+.pool-hero:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.pool-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pool-mark {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+.pool-mark-ring {
+  position: relative;
+  width: 76px;
+  height: 76px;
+}
+
+.pool-mark-ring svg {
+  display: block;
+  width: 76px;
+  height: 76px;
+}
+
+.pool-mark-ring .ring-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 6;
+}
+
+.pool-mark-ring .ring-fill {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 420ms ease;
+}
+
+.pool-mark.tone-ok .ring-fill {
+  stroke: var(--accent);
+}
+.pool-mark.tone-warn .ring-fill {
+  stroke: var(--warn);
+}
+.pool-mark.tone-danger .ring-fill {
+  stroke: var(--danger);
+}
+
+.pool-mark:nth-child(2).tone-ok .ring-fill {
+  stroke: var(--accent-2);
+}
+
+.pool-mark-value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 1px;
+  padding-top: 24px;
+}
+
+.pool-mark-num {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.pool-mark-unit {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.pool-mark-label {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+.pool-hero-meta {
+  margin: 0;
+  text-align: center;
+  font-size: 10px;
+  color: var(--muted);
 }
 
 .hero-hit {
@@ -418,13 +524,17 @@ button {
 
 .guide-chip {
   margin: 0;
-  font-size: 9px;
-  line-height: 1.35;
-  color: var(--warn);
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--muted);
 }
 
 .guide-chip.danger {
   color: var(--danger);
+  background: rgba(240, 139, 122, 0.1);
 }
 
 .billing-guide {
@@ -439,7 +549,10 @@ button {
 .guide-tabs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .guide-tabs.five {
@@ -447,9 +560,9 @@ button {
 }
 
 .guide-tab {
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 4px 0;
+  border: 0;
+  border-radius: 8px;
+  padding: 5px 0;
   font-size: 10px;
   color: var(--muted);
   background: transparent;
@@ -457,8 +570,8 @@ button {
 
 .guide-tab.active {
   color: var(--text);
-  border-color: rgba(47, 211, 197, 0.45);
-  background: rgba(47, 211, 197, 0.1);
+  background: rgba(62, 224, 208, 0.14);
+  box-shadow: 0 0 0 1px rgba(62, 224, 208, 0.2);
 }
 
 .guide-panel {
@@ -923,10 +1036,10 @@ button {
 .mini-area-svg {
   display: block;
   width: 100%;
-  height: 44px;
-  border-radius: 8px;
+  height: 48px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(170, 205, 220, 0.1);
+  border: 1px solid rgba(210, 228, 236, 0.08);
 }
 
 .mini-bars-track {

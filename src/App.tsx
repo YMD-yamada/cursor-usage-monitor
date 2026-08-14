@@ -1,13 +1,27 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useMonitorData } from './hooks/useMonitorData'
 import { UsageCharts, UsageMiniBars } from './components/UsageCharts'
-import { UsageBucketStrip } from './components/UsageBuckets'
 import { BillingGuide, GuideChip } from './components/BillingGuide'
+import { DualPoolHero } from './components/UsageHero'
 import {
   clampPercent,
   formatBytes,
-  formatUsd,
 } from './lib/format'
+
+function ChromeGlyph({
+  children,
+  title,
+}: {
+  children: ReactNode
+  title: string
+}) {
+  return (
+    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+      <title>{title}</title>
+      {children}
+    </svg>
+  )
+}
 
 export default function App() {
   const {
@@ -45,28 +59,17 @@ export default function App() {
       usage?.spend.apiPercentUsed ??
       0,
   )
-  // Official UI has no single combined bar; hero highlights the hotter pool.
-  const heroPct = Math.max(cursorPct, otherPct)
-  const heroPool = otherPct > cursorPct ? 'Other Models' : 'Cursor Models'
-  const poolsHot =
-    Boolean(usage?.breakdown?.cursorModels?.exhausted) ||
-    Boolean(usage?.breakdown?.otherModels?.exhausted) ||
-    heroPct >= 99.5
-  const sysCpu = clampPercent(metrics?.cpu.loadPercent ?? 0)
   const sysMem = clampPercent(metrics?.memory.usedPercent ?? 0)
   const cursorMemPct = clampPercent(metrics?.cursor.memPercent ?? 0)
   const otherMemPct = clampPercent(Math.max(sysMem - cursorMemPct, 0))
   const freeMemPct = clampPercent(100 - sysMem)
   const counts = tasks?.counts
 
-  const usageTone =
-    poolsHot || heroPct >= 90 ? 'danger' : heroPct >= 70 ? 'warn' : 'ok'
-
   const statusLine = useMemo(() => {
     if (usageError) return usageError
     if (metricsError) return metricsError
     if (tasksError) return tasksError
-    if (!usage?.breakdown) return usage?.billing.autoMessage || 'Cursor monitor'
+    if (!usage?.breakdown) return usage?.billing.autoMessage || 'Usageboard'
     const b = usage.breakdown
     const cm = b.cursorModels?.percent ?? b.auto.percent
     const om = b.otherModels?.percent ?? b.named.percent
@@ -112,8 +115,8 @@ export default function App() {
           onPointerCancel={() => window.cursorMonitor?.endDrag?.()}
           onLostPointerCapture={() => window.cursorMonitor?.endDrag?.()}
         >
-          <span className="brand-mark">C</span>
-          <span className="brand-text">Monitor</span>
+          <span className="brand-mark" aria-hidden="true" />
+          <span className="brand-text">Usageboard</span>
         </div>
         <div className="chrome-actions">
           <button
@@ -122,7 +125,27 @@ export default function App() {
             title={expanded ? 'コンパクト表示' : '詳細を開く'}
             onClick={() => void toggle()}
           >
-            {expanded ? '▴' : '▾'}
+            <ChromeGlyph title={expanded ? 'コンパクト' : '詳細'}>
+              {expanded ? (
+                <path
+                  d="M4 10.5L8 6.5L12 10.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ) : (
+                <path
+                  d="M4 6.5L8 10.5L12 6.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
+            </ChromeGlyph>
           </button>
           {isElectron && (
             <>
@@ -132,7 +155,24 @@ export default function App() {
                 title="右端にスナップ"
                 onClick={() => void window.cursorMonitor?.snapRight()}
               >
-                ⌐
+                <ChromeGlyph title="右端にスナップ">
+                  <rect
+                    x="3"
+                    y="3.5"
+                    width="10"
+                    height="9"
+                    rx="1.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                  />
+                  <path
+                    d="M9 3.5V12.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                  />
+                </ChromeGlyph>
               </button>
               <button
                 type="button"
@@ -140,7 +180,15 @@ export default function App() {
                 title="最小化（タスクバー）"
                 onClick={() => void window.cursorMonitor?.minimize?.()}
               >
-                –
+                <ChromeGlyph title="最小化">
+                  <path
+                    d="M3.5 12.5H12.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </ChromeGlyph>
               </button>
               <button
                 type="button"
@@ -148,54 +196,47 @@ export default function App() {
                 title="トレイに隠す"
                 onClick={() => void window.cursorMonitor?.hide()}
               >
-                ×
+                <ChromeGlyph title="トレイに隠す">
+                  <path
+                    d="M4.5 4.5L11.5 11.5M11.5 4.5L4.5 11.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </ChromeGlyph>
               </button>
             </>
           )}
         </div>
       </header>
 
-      <button type="button" className="hero-hit" onClick={() => void toggle()}>
-        <div className={`usage-big tone-${usageTone}`}>
-          <span className="usage-num">{usage ? heroPct.toFixed(0) : '—'}</span>
-          <span className="usage-unit">%</span>
-        </div>
-        <div className="hero-side">
-          <p className="hero-label">{usage ? heroPool : 'Usage'}</p>
-          <p className="hero-spend">
-            {usage
-              ? `CM ${cursorPct.toFixed(0)}% · OM ${otherPct.toFixed(0)}%`
-              : '…'}
-          </p>
-          <p className="hero-meta mono">
-            {usage
-              ? `従量 ${usage.breakdown?.onDemand.allowed ? 'ON' : 'OFF'}${
-                  usage.spend.bonusUsd > 0
-                    ? ` · ボーナス会計 ${formatUsd(usage.spend.bonusUsd)}`
-                    : ''
-                }`
-              : `CPU ${sysCpu.toFixed(0)}% · Tasks ${taskSummary}`}
-          </p>
-        </div>
-      </button>
+      <DualPoolHero
+        cursorPct={cursorPct}
+        otherPct={otherPct}
+        cursorExhausted={Boolean(usage?.breakdown?.cursorModels?.exhausted)}
+        otherExhausted={Boolean(usage?.breakdown?.otherModels?.exhausted)}
+        onDemandAllowed={usage?.breakdown?.onDemand.allowed}
+        loading={!usage}
+        onToggle={() => void toggle()}
+      />
 
-      {usage?.breakdown ? <UsageBucketStrip usage={usage} /> : null}
       {usage?.guide ? <GuideChip usage={usage} /> : null}
 
       {usage?.charts?.daily?.length ? (
         <UsageMiniBars daily={usage.charts.daily} />
       ) : (
         <p className="chart-empty compact-empty">
-          Usage グラフ待機中…（展開後に詳細グラフ）
+          {taskSummary === '静か' ? '14日グラフを準備中' : `Tasks ${taskSummary}`}
         </p>
       )}
 
       <div className="share-block" title={ramTitle}>
         <div className="share-head">
-          <span>RAM</span>
+          <span>この PC の RAM</span>
           <span className="mono">
             {metrics
-              ? `${sysMem.toFixed(0)}% · C ${cursorMemPct.toFixed(0)}%`
+              ? `${sysMem.toFixed(0)}% · Cursor ${cursorMemPct.toFixed(0)}%`
               : '…'}
           </span>
         </div>
@@ -247,7 +288,6 @@ export default function App() {
                     if (typeof r?.autostart === 'boolean') setAutostart(r.autostart)
                   })
                   .catch(() => {
-                    // Keep the optimistic value if IPC fails.
                     setAutostart(next)
                   })
               }}

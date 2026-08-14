@@ -1,11 +1,11 @@
-# Cursor Usage Monitor
+# Usageboard
 
-Resident desktop widget for **Cursor** users (Windows / Electron).
+Resident desktop widget for **Cursor** users (Windows / Electron). Store name: **Usageboard**.
 
-- Visualize Usage (plan quota, bonus, on-demand, Auto vs named models)
+- Visualize Usage as two official pools (Cursor Models / Other Models)
 - Explain billing / model pools in-app
 - Save a local “no on-demand / stretch plan / change plan when needed” ops preference and deep-link to Cursor Dashboard
-- Show Cursor process CPU / memory and a light multi-agent overview
+- Show Cursor process CPU / memory
 - 14-day Usage area charts (compact + expanded)
 
 > Not an official Cursor product. Reads your **local** Cursor session and calls Cursor dashboard APIs as you.
@@ -14,9 +14,9 @@ Resident desktop widget for **Cursor** users (Windows / Electron).
 
 - Windows 10/11
 - [Cursor](https://cursor.com/) installed and signed in
-- Node.js 20+
+- Node.js 20+ (source run). The Store / packaged build does not need a separate Node install.
 
-## Setup
+## Setup (from source)
 
 ```bash
 git clone https://github.com/YMD-yamada/cursor-usage-monitor.git
@@ -74,6 +74,8 @@ npm run desktop:dev
 ```bash
 npm run smoke
 ```
+
+Microsoft Store packaging: [docs/STORE_LISTING.md](./docs/STORE_LISTING.md) · [docs/RELEASE_FLOW.md](./docs/RELEASE_FLOW.md)
 
 ## License
 

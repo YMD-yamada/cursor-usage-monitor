@@ -1,0 +1,6 @@
+{
+  "identityName": "KentoYamada.Usageboard",
+  "publisher": "CN=2BF85987-6A2E-4A9B-9DBF-C9A3580E7588",
+  "publisherDisplayName": "Kento Yamada",
+  "note": "Same publisher as Timeboard. Reserve Usageboard in Partner Center, then keep electron-builder.yml appx.* in sync. If the name is taken, use Usageboard by ymd."
+}

@@ -17,8 +17,8 @@ const PORT = Number(process.env.PORT || 8787)
 const isDev = process.env.CURSOR_MONITOR_DEV === '1'
 const APP_ROOT = path.join(__dirname, '..')
 
-const COMPACT = { width: 300, height: 300 }
-const EXPANDED = { width: 380, height: 760 }
+const COMPACT = { width: 320, height: 348 }
+const EXPANDED = { width: 400, height: 780 }
 
 let serverProcess = null
 let mainWindow = null
@@ -35,15 +35,36 @@ if (!gotLock) {
   })
 }
 
+function isPackaged() {
+  return Boolean(app.isPackaged)
+}
+
+function getAppRoot() {
+  if (isPackaged()) {
+    return path.join(process.resourcesPath, 'app')
+  }
+  return APP_ROOT
+}
+
+function getSettingsPath() {
+  return path.join(app.getPath('userData'), 'resident.json')
+}
+
 function startServer() {
   if (isDev) return null
-  const entry = path.join(APP_ROOT, 'server', 'index.mjs')
-  return spawn('node', ['--experimental-sqlite', entry], {
-    cwd: APP_ROOT,
-    env: { ...process.env, PORT: String(PORT) },
+  const root = getAppRoot()
+  const entry = path.join(root, 'server', 'index.mjs')
+  const packaged = isPackaged()
+  return spawn(packaged ? process.execPath : 'node', ['--experimental-sqlite', entry], {
+    cwd: root,
+    env: {
+      ...process.env,
+      PORT: String(PORT),
+      ...(packaged ? { ELECTRON_RUN_AS_NODE: '1' } : {}),
+    },
     stdio: 'ignore',
     windowsHide: true,
-    shell: true,
+    shell: !packaged,
     detached: false,
   })
 }
@@ -153,23 +174,35 @@ function getStartupVbsPath() {
 function writeStartupVbs() {
   const vbsPath = getStartupVbsPath()
   const startupDir = path.dirname(vbsPath)
-  const launchJs = path
-    .join(APP_ROOT, 'scripts', 'launch-resident.mjs')
-    .replace(/\\/g, '\\\\')
-  const rootEscaped = APP_ROOT.replace(/\\/g, '\\\\')
-  const vbs = [
-    'Set sh = CreateObject("WScript.Shell")',
-    `sh.CurrentDirectory = "${rootEscaped}"`,
-    `sh.Run "node ""${launchJs}""", 0, False`,
-    '',
-  ].join('\r\n')
   fs.mkdirSync(startupDir, { recursive: true })
+
+  let vbs
+  if (isPackaged()) {
+    const exe = process.execPath.replace(/"/g, '')
+    vbs = [
+      'Set sh = CreateObject("WScript.Shell")',
+      `sh.Run """${exe}""", 0, False`,
+      '',
+    ].join('\r\n')
+  } else {
+    const launchJs = path
+      .join(APP_ROOT, 'scripts', 'launch-resident.mjs')
+      .replace(/\\/g, '\\\\')
+    const rootEscaped = APP_ROOT.replace(/\\/g, '\\\\')
+    vbs = [
+      'Set sh = CreateObject("WScript.Shell")',
+      `sh.CurrentDirectory = "${rootEscaped}"`,
+      `sh.Run "node ""${launchJs}""", 0, False`,
+      '',
+    ].join('\r\n')
+  }
   fs.writeFileSync(vbsPath, vbs, 'utf8')
   return vbsPath
 }
 
 function persistAutostartPreference(enabled, vbsPath) {
-  const settingsPath = path.join(APP_ROOT, '.resident.json')
+  const settingsPath = getSettingsPath()
+  fs.mkdirSync(path.dirname(settingsPath), { recursive: true })
   let prev = {}
   try {
     prev = JSON.parse(fs.readFileSync(settingsPath, 'utf8'))
@@ -218,7 +251,7 @@ function setAutostartEnabled(enabled) {
       openAtLogin: want,
       openAsHidden: false,
       path: process.execPath,
-      args: [APP_ROOT],
+      args: isPackaged() ? [] : [APP_ROOT],
     })
   } catch (error) {
     console.error('autostart login-item update failed', error)
@@ -311,7 +344,7 @@ function createWindow(url) {
     alwaysOnTop: true,
     hasShadow: true,
     backgroundColor: '#00000000',
-    title: 'Cursor Usage Monitor',
+    title: 'Usageboard',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -350,7 +383,7 @@ function createWindow(url) {
 
 function createTray() {
   tray = new Tray(createTrayIcon())
-  tray.setToolTip('Cursor Usage Monitor（常駐中）')
+  tray.setToolTip('Usageboard（常駐中）')
   rebuildTrayMenu()
   tray.on('click', () => {
     if (!mainWindow) {
@@ -459,7 +492,7 @@ if (gotLock) {
 
     // Default: enable login autostart once for resident use
     if (!isDev && process.env.CURSOR_MONITOR_NO_AUTOSTART !== '1') {
-      const settingsPath = path.join(APP_ROOT, '.resident.json')
+      const settingsPath = getSettingsPath()
       let configured = false
       try {
         configured = JSON.parse(fs.readFileSync(settingsPath, 'utf8')).autostartConfigured
@@ -468,11 +501,6 @@ if (gotLock) {
       }
       if (!configured) {
         setAutostartEnabled(true)
-        fs.writeFileSync(
-          settingsPath,
-          JSON.stringify({ autostartConfigured: true, enabledAt: new Date().toISOString() }, null, 2),
-          'utf8',
-        )
       }
     }
 

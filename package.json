@@ -1,9 +1,19 @@
 {
   "name": "cursor-usage-monitor",
+  "productName": "Usageboard",
   "version": "1.0.0",
   "private": true,
-  "description": "Resident widget: Cursor Usage breakdown, billing guide, and dashboard deep-links (no on-demand policy)",
+  "description": "Unofficial resident widget for Cursor Usage pools, billing guide, and dashboard deep-links",
   "license": "MIT",
+  "author": "ymd",
+  "homepage": "https://github.com/YMD-yamada/cursor-usage-monitor",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YMD-yamada/cursor-usage-monitor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YMD-yamada/cursor-usage-monitor/issues"
+  },
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -16,6 +26,9 @@
     "server": "node --experimental-sqlite server/index.mjs",
     "desktop": "node scripts/start-desktop.mjs",
     "desktop:dev": "node scripts/dev-electron.mjs",
+    "icons": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/make-icons.ps1",
+    "pack:win": "npm run build && npx --yes electron-builder --win nsis portable appx --x64 --arm64 --config electron-builder.yml",
+    "pack:store": "npm run build && npx --yes electron-builder --win appx --x64 --arm64 --config electron-builder.yml",
     "smoke": "node scripts/smoke.mjs",
     "smoke:resident": "node scripts/smoke.mjs --check-resident",
     "postinstall": "node scripts/fix-rollup-wasm.mjs"

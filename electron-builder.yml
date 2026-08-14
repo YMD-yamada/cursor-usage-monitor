@@ -1,0 +1,39 @@
+appId: jp.ymd.usageboard
+productName: Usageboard
+copyright: Copyright © 2026 ymd
+asar: false
+files:
+  - dist/**
+  - electron/**/*
+  - server/**/*
+  - package.json
+directories:
+  output: release
+  buildResources: build
+extraMetadata:
+  homepage: https://github.com/YMD-yamada/cursor-usage-monitor
+win:
+  icon: build/icon.png
+  target:
+    - nsis
+    - portable
+    - appx
+  artifactName: Usageboard-${version}-${os}-${arch}.${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: Usageboard
+  artifactName: Usageboard-${version}-${os}-${arch}-setup.${ext}
+portable:
+  artifactName: Usageboard-${version}-${os}-${arch}-portable.${ext}
+appx:
+  identityName: KentoYamada.Usageboard
+  publisher: CN=2BF85987-6A2E-4A9B-9DBF-C9A3580E7588
+  publisherDisplayName: Kento Yamada
+  displayName: Usageboard
+  applicationId: Usageboard
+  languages:
+    - ja-JP
+    - en-US
+  showNameOnTiles: true
+  setBuildNumber: true
