@@ -8,6 +8,16 @@ Resident desktop widget for **Cursor** users (Windows / Electron). Store name: *
 - Show Cursor process CPU / memory
 - 14-day Usage area charts (compact + expanded)
 
+## Install
+
+Windows 向けの無料インストーラー:
+
+https://github.com/YMD-yamada/cursor-usage-monitor/releases/latest
+
+- `Usageboard-*-win-x64-setup.exe`（推奨）
+- portable exe はインストールなし
+- Microsoft Store は審査提出待ち（無料・アプリ内課金なし）
+
 > Not an official Cursor product. Reads your **local** Cursor session and calls Cursor dashboard APIs as you.
 
 ## Requirements
