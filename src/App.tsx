@@ -3,6 +3,7 @@ import { useMonitorData } from './hooks/useMonitorData'
 import { UsageCharts, UsageMiniBars } from './components/UsageCharts'
 import { BillingGuide, GuideChip } from './components/BillingGuide'
 import { DualPoolHero } from './components/UsageHero'
+import { CURSOR_LINKS, openCursorLink } from './lib/cursorLinks'
 import {
   clampPercent,
   formatBytes,
@@ -294,6 +295,23 @@ export default function App() {
             />
             <span>ログイン時に自動起動</span>
           </label>
+          <p className="support-row">
+            無料・非公式
+            <button
+              type="button"
+              className="text-link"
+              onClick={() => openCursorLink(CURSOR_LINKS.sponsors)}
+            >
+              任意の支援
+            </button>
+            <button
+              type="button"
+              className="text-link"
+              onClick={() => openCursorLink(CURSOR_LINKS.github)}
+            >
+              GitHub
+            </button>
+          </p>
           <div className="expanded-actions">
             <button
               type="button"

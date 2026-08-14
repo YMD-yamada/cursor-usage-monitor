@@ -72,18 +72,6 @@ function readHeadText(filePath, maxBytes = 6_000) {
   }
 }
 
-function extractUserQuery(text) {
-  const m = text.match(/<user_query>\s*([\s\S]*?)\s*<\/user_query>/i)
-  if (m?.[1]) {
-    return m[1]
-      .replace(/\\n/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 120)
-  }
-  return ''
-}
-
 function projectLabel(projectDirName, workspacePath) {
   if (workspacePath) {
     const base = workspacePath.replace(/[\\/]+$/, '').split(/[\\/]/).filter(Boolean).at(-1)
@@ -155,8 +143,6 @@ function scanTranscripts() {
 }
 
 function inspectTranscript(entry) {
-  const head = readHeadText(entry.file)
-  const titleFromQuery = extractUserQuery(head)
   const lines = readTailLines(entry.file)
   let last = null
   for (let i = lines.length - 1; i >= 0; i -= 1) {
@@ -187,7 +173,6 @@ function inspectTranscript(entry) {
   }
 
   return {
-    titleFromQuery,
     lastType,
     turnEnded,
     turnStatus,
@@ -332,10 +317,9 @@ export function getTaskOverview() {
   for (const entry of scanTranscripts()) {
     const info = inspectTranscript(entry)
     const existing = byId.get(entry.id)
-    const title =
-      existing?.title && existing.title !== 'Untitled'
-        ? existing.title
-        : info.titleFromQuery || existing?.title || entry.id.slice(0, 8)
+    const title = existing?.title && existing.title !== 'Untitled'
+      ? existing.title
+      : 'Agent'
 
     byId.set(entry.id, {
       id: entry.id,
@@ -416,8 +400,6 @@ export function getTaskOverview() {
 
   return {
     fetchedAt: new Date().toISOString(),
-    selectedId,
     counts,
-    tasks,
   }
 }

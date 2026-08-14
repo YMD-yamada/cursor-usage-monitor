@@ -1,7 +1,7 @@
 {
   "name": "cursor-usage-monitor",
   "productName": "Usageboard",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Unofficial resident widget for Cursor Usage pools, billing guide, and dashboard deep-links",
   "license": "MIT",

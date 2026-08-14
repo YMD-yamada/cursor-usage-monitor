@@ -20,11 +20,76 @@ const APP_ROOT = path.join(__dirname, '..')
 const COMPACT = { width: 320, height: 348 }
 const EXPANDED = { width: 400, height: 780 }
 
+const EXTERNAL_ALLOW = [
+  /^https:\/\/([\w-]+\.)?cursor\.com(\/|$)/i,
+  /^https:\/\/github\.com\/(YMD-yamada|sponsors\/YMD-yamada)(\/|$)/i,
+  /^https:\/\/personal-site-taupe-gamma\.vercel\.app(\/|$)/i,
+]
+
 let serverProcess = null
 let mainWindow = null
 let tray = null
 let expanded = false
 let bootUrl = null
+let dragTimer = null
+let dragOffset = null
+let dragSize = null
+
+function stopDrag() {
+  if (dragTimer) {
+    clearInterval(dragTimer)
+    dragTimer = null
+  }
+  dragOffset = null
+  dragSize = null
+}
+
+function currentSize() {
+  return expanded ? EXPANDED : COMPACT
+}
+
+function isAllowedExternal(url) {
+  return typeof url === 'string' && EXTERNAL_ALLOW.some((re) => re.test(url))
+}
+
+function getWindowStatePath() {
+  return path.join(app.getPath('userData'), 'window.json')
+}
+
+function readWindowState() {
+  try {
+    return JSON.parse(fs.readFileSync(getWindowStatePath(), 'utf8'))
+  } catch {
+    return null
+  }
+}
+
+function writeWindowState(bounds) {
+  try {
+    fs.mkdirSync(path.dirname(getWindowStatePath()), { recursive: true })
+    fs.writeFileSync(
+      getWindowStatePath(),
+      JSON.stringify(
+        {
+          x: bounds.x,
+          y: bounds.y,
+          expanded,
+        },
+        null,
+        2,
+      ),
+      'utf8',
+    )
+  } catch {
+    // ignore
+  }
+}
+
+function lockSize(win, size) {
+  if (!win || win.isDestroyed()) return
+  win.setMinimumSize(size.width, size.height)
+  win.setMaximumSize(size.width, size.height)
+}
 
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) {
@@ -107,19 +172,22 @@ function placeOnRightEdge(win, size) {
 
 function applySize(nextExpanded) {
   expanded = nextExpanded
-  const size = expanded ? EXPANDED : COMPACT
-  if (!mainWindow) return
+  const size = currentSize()
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  lockSize(mainWindow, size)
   const bounds = mainWindow.getBounds()
   const display = screen.getDisplayMatching(bounds)
   const work = display.workArea
   const x = Math.min(bounds.x, work.x + work.width - size.width - 8)
   const y = Math.min(bounds.y, work.y + work.height - size.height - 8)
-  mainWindow.setBounds({
-    x: Math.max(work.x + 8, x),
-    y: Math.max(work.y + 8, y),
+  const next = {
+    x: Math.max(work.x + 8, Math.round(x)),
+    y: Math.max(work.y + 8, Math.round(y)),
     width: size.width,
     height: size.height,
-  })
+  }
+  mainWindow.setBounds(next)
+  writeWindowState(next)
   mainWindow.webContents.send('widget:expanded', expanded)
 }
 
@@ -297,7 +365,8 @@ function rebuildTrayMenu() {
       label: '右端にスナップ',
       click: () => {
         if (!mainWindow) return
-        placeOnRightEdge(mainWindow, expanded ? EXPANDED : COMPACT)
+        placeOnRightEdge(mainWindow, currentSize())
+        writeWindowState(mainWindow.getBounds())
       },
     },
     {
@@ -329,10 +398,14 @@ function rebuildTrayMenu() {
 }
 
 function createWindow(url) {
-  const size = COMPACT
+  const size = currentSize()
   mainWindow = new BrowserWindow({
     width: size.width,
     height: size.height,
+    minWidth: size.width,
+    minHeight: size.height,
+    maxWidth: size.width,
+    maxHeight: size.height,
     show: false,
     frame: false,
     transparent: true,
@@ -349,14 +422,39 @@ function createWindow(url) {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
     },
   })
 
-  placeOnRightEdge(mainWindow, size)
+  lockSize(mainWindow, size)
+  const saved = readWindowState()
+  const display = saved
+    ? screen.getDisplayNearestPoint({ x: saved.x || 0, y: saved.y || 0 })
+    : screen.getPrimaryDisplay()
+  const work = display.workArea
+  if (
+    saved &&
+    Number.isFinite(saved.x) &&
+    Number.isFinite(saved.y) &&
+    saved.x >= work.x - 40 &&
+    saved.y >= work.y - 40 &&
+    saved.x < work.x + work.width &&
+    saved.y < work.y + work.height
+  ) {
+    mainWindow.setBounds({
+      x: Math.round(saved.x),
+      y: Math.round(saved.y),
+      width: size.width,
+      height: size.height,
+    })
+  } else {
+    placeOnRightEdge(mainWindow, size)
+  }
+
   mainWindow.setAlwaysOnTop(true, 'floating')
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
-  // Allow dragging frameless window reliably on Windows
   mainWindow.setMovable(true)
+  mainWindow.setMenu(null)
 
   mainWindow.loadURL(url)
   mainWindow.once('ready-to-show', () => {
@@ -364,8 +462,17 @@ function createWindow(url) {
   })
 
   mainWindow.webContents.setWindowOpenHandler(({ url: target }) => {
-    shell.openExternal(target)
+    if (isAllowedExternal(target)) shell.openExternal(target)
     return { action: 'deny' }
+  })
+  mainWindow.webContents.on('will-navigate', (event, target) => {
+    const local =
+      target.startsWith(`http://127.0.0.1:${PORT}`) ||
+      target.startsWith('http://127.0.0.1:5173/')
+    if (!local) event.preventDefault()
+  })
+  mainWindow.on('blur', () => {
+    stopDrag()
   })
 
   // Close / × → hide to tray (stay resident)
@@ -396,16 +503,6 @@ function createTray() {
 }
 
 function registerIpc() {
-  let dragTimer = null
-  let dragOffset = null
-
-  function stopDrag() {
-    if (dragTimer) {
-      clearInterval(dragTimer)
-      dragTimer = null
-    }
-    dragOffset = null
-  }
 
   ipcMain.handle('widget:getState', () => ({
     expanded,
@@ -421,7 +518,10 @@ function registerIpc() {
     return { expanded }
   })
   ipcMain.handle('widget:snapRight', () => {
-    if (mainWindow) placeOnRightEdge(mainWindow, expanded ? EXPANDED : COMPACT)
+    if (mainWindow) {
+      placeOnRightEdge(mainWindow, currentSize())
+      writeWindowState(mainWindow.getBounds())
+    }
     return true
   })
   ipcMain.handle('widget:hide', () => {
@@ -442,47 +542,57 @@ function registerIpc() {
     return { autostart: value }
   })
   ipcMain.handle('widget:openExternal', (_event, target) => {
-    if (typeof target === 'string' && /^https?:/i.test(target)) {
+    if (isAllowedExternal(target)) {
       shell.openExternal(target)
     }
     return true
   })
 
-  // Custom window drag (CSS -webkit-app-region is unreliable with transparent windows)
+  // Custom window drag. Cache size — setPosition on Windows DPI grows the frame.
   ipcMain.on('widget:drag-start', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender)
     if (!win) return
     stopDrag()
     const cursor = screen.getCursorScreenPoint()
     const bounds = win.getBounds()
+    const size = currentSize()
+    lockSize(win, size)
+    dragSize = { width: size.width, height: size.height }
     dragOffset = {
       x: cursor.x - bounds.x,
       y: cursor.y - bounds.y,
     }
     dragTimer = setInterval(() => {
-      if (!dragOffset || win.isDestroyed()) {
+      if (!dragOffset || !dragSize || win.isDestroyed()) {
         stopDrag()
         return
       }
       const point = screen.getCursorScreenPoint()
       const display = screen.getDisplayNearestPoint(point)
       const work = display.workArea
-      const size = win.getBounds()
-      let nextX = point.x - dragOffset.x
-      let nextY = point.y - dragOffset.y
+      let nextX = Math.round(point.x - dragOffset.x)
+      let nextY = Math.round(point.y - dragOffset.y)
       nextX = Math.min(
         Math.max(work.x, nextX),
-        work.x + work.width - size.width,
+        work.x + work.width - dragSize.width,
       )
       nextY = Math.min(
         Math.max(work.y, nextY),
-        work.y + work.height - size.height,
+        work.y + work.height - dragSize.height,
       )
-      win.setPosition(nextX, nextY)
+      win.setBounds({
+        x: nextX,
+        y: nextY,
+        width: dragSize.width,
+        height: dragSize.height,
+      })
     }, 16)
   })
   ipcMain.on('widget:drag-end', () => {
     stopDrag()
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      writeWindowState(mainWindow.getBounds())
+    }
   })
 }
 

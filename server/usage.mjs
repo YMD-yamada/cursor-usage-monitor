@@ -41,7 +41,7 @@ async function postJson(sessionToken, endpoint, body = {}) {
   })
   const text = await res.text()
   if (!res.ok) {
-    throw new Error(`${endpoint} failed (${res.status}): ${text.slice(0, 200)}`)
+    throw new Error(`${endpoint} failed (${res.status})`)
   }
   return text ? JSON.parse(text) : null
 }
@@ -53,7 +53,7 @@ async function getJson(sessionToken, endpoint) {
   })
   const text = await res.text()
   if (!res.ok) {
-    throw new Error(`${endpoint} failed (${res.status}): ${text.slice(0, 200)}`)
+    throw new Error(`${endpoint} failed (${res.status})`)
   }
   return text ? JSON.parse(text) : null
 }

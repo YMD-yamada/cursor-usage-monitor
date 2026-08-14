@@ -61,39 +61,16 @@ async function getWindowsMetrics() {
 $ErrorActionPreference = 'Stop'
 $os = Get-CimInstance Win32_OperatingSystem
 $cpu = Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average
-$all = @(Get-Process | Select-Object Id, ProcessName, CPU,
-  @{N='WorkingSet';E={$_.WorkingSet64}},
-  @{N='PrivateMemory';E={$_.PrivateMemorySize64}},
-  @{N='StartTime';E={ if ($_.StartTime) { $_.StartTime.ToString('o') } else { $null } }},
-  @{N='Path';E={ try { $_.Path } catch { $null } }})
-
-$cursor = @($all | Where-Object {
-  $_.ProcessName -match '^(Cursor|cursor)$' -or ($_.Path -and $_.Path -match 'Cursor')
-})
-
-$topMem = @($all | Sort-Object WorkingSet -Descending | Select-Object -First 40)
-
-$groups = @($all | Group-Object ProcessName | ForEach-Object {
-  $ws = ($_.Group | Measure-Object WorkingSet -Sum).Sum
-  $pm = ($_.Group | Measure-Object PrivateMemory -Sum).Sum
-  $cpuSum = ($_.Group | Measure-Object CPU -Sum).Sum
-  [pscustomobject]@{
-    Name = $_.Name
-    Count = $_.Count
-    WorkingSet = [int64]$ws
-    PrivateMemory = [int64]$pm
-    CPU = [double]$cpuSum
-  }
-} | Sort-Object WorkingSet -Descending | Select-Object -First 15)
-
+$cursor = @(Get-Process -Name Cursor,cursor -ErrorAction SilentlyContinue |
+  Select-Object Id, ProcessName, CPU,
+    @{N='WorkingSet';E={$_.WorkingSet64}},
+    @{N='PrivateMemory';E={$_.PrivateMemorySize64}})
 [pscustomobject]@{
   cpuLoad = [math]::Round([double]$cpu.Average, 1)
   totalMem = [int64]$os.TotalVisibleMemorySize * 1024
   freeMem = [int64]$os.FreePhysicalMemory * 1024
   processes = $cursor
-  topProcesses = $topMem
-  memoryGroups = $groups
-} | ConvertTo-Json -Compress -Depth 5
+} | ConvertTo-Json -Compress -Depth 4
 `
 
   const stdout = await runPowerShell(script)
@@ -106,38 +83,7 @@ $groups = @($all | Group-Object ProcessName | ForEach-Object {
   const processes = asArray(data.processes).map((p) =>
     mapProcess(p, now, totalMem),
   )
-  processes.sort((a, b) => b.workingSetBytes - a.workingSetBytes)
-
-  const topProcesses = asArray(data.topProcesses)
-    .map((p) => mapProcess(p, now, totalMem))
-    .sort((a, b) => b.workingSetBytes - a.workingSetBytes)
-    .slice(0, 12)
-
-  const topByCpu = [...topProcesses]
-    .sort((a, b) => b.cpuPercent - a.cpuPercent)
-    .slice(0, 8)
-
-  const memoryGroups = asArray(data.memoryGroups)
-    .map((g) => {
-      const workingSetBytes = Number(g.WorkingSet || 0)
-      return {
-        name: g.Name || 'unknown',
-        count: Number(g.Count || 0),
-        workingSetBytes,
-        privateBytes: Number(g.PrivateMemory || 0),
-        cpuTimeSec: Number(g.CPU || 0),
-        memPercent:
-          totalMem > 0
-            ? Math.round((workingSetBytes / totalMem) * 1000) / 10
-            : 0,
-      }
-    })
-    .sort((a, b) => b.workingSetBytes - a.workingSetBytes)
-
-  const tracked = new Set([
-    ...processes.map((p) => p.pid),
-    ...topProcesses.map((p) => p.pid),
-  ])
+  const tracked = new Set(processes.map((p) => p.pid))
   for (const pid of previousCpu.keys()) {
     if (!tracked.has(pid)) previousCpu.delete(pid)
   }
@@ -149,7 +95,6 @@ $groups = @($all | Group-Object ProcessName | ForEach-Object {
     cpu: {
       loadPercent: Number(data.cpuLoad || 0),
       cores: os.cpus().length,
-      model: os.cpus()[0]?.model || 'CPU',
     },
     memory: {
       totalBytes: totalMem,
@@ -166,12 +111,6 @@ $groups = @($all | Group-Object ProcessName | ForEach-Object {
         Math.round(processes.reduce((s, p) => s + p.cpuPercent, 0) * 10) / 10,
       memPercent:
         totalMem > 0 ? Math.round((cursorWs / totalMem) * 1000) / 10 : 0,
-      processes,
-    },
-    system: {
-      memoryGroups,
-      topProcesses,
-      topByCpu,
     },
     sampledAt: new Date().toISOString(),
   }
@@ -266,7 +205,6 @@ async function getUnixMetrics() {
     cpu: {
       loadPercent: total > 0 ? Math.round((1 - idle / total) * 1000) / 10 : 0,
       cores: cpus.length,
-      model: cpus[0]?.model || 'CPU',
     },
     memory: {
       totalBytes: totalMem,
@@ -282,14 +220,6 @@ async function getUnixMetrics() {
         Math.round(processes.reduce((s, p) => s + p.cpuPercent, 0) * 10) / 10,
       memPercent:
         totalMem > 0 ? Math.round((cursorWs / totalMem) * 1000) / 10 : 0,
-      processes,
-    },
-    system: {
-      memoryGroups,
-      topProcesses,
-      topByCpu: [...all]
-        .sort((a, b) => b.cpuPercent - a.cpuPercent)
-        .slice(0, 8),
     },
     sampledAt: new Date().toISOString(),
   }

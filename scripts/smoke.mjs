@@ -154,13 +154,26 @@ async function probe(port) {
   )
 
   const tasks = await getJson(`${base}/api/tasks`)
-  const tasksOk = tasks.status === 200 && Array.isArray(tasks.json?.tasks)
+  const tasksOk =
+    tasks.status === 200 &&
+    typeof tasks.json?.counts?.running === 'number' &&
+    !Array.isArray(tasks.json?.tasks)
   record(
     'GET /api/tasks',
     tasksOk,
     tasks.status === 200
-      ? `count=${tasks.json.tasks.length}`
+      ? `running=${tasks.json.counts.running} noTitles=${!tasks.json.tasks}`
       : `status=${tasks.status} ${tasks.json?.error || ''}`,
+  )
+
+  const metricsLeak =
+    metrics.status === 200 &&
+    (Array.isArray(metrics.json?.cursor?.processes) ||
+      Array.isArray(metrics.json?.system?.topProcesses))
+  record(
+    'metrics privacy',
+    metrics.status === 200 && !metricsLeak,
+    metricsLeak ? 'process list leaked' : 'aggregates only',
   )
 
   const usage = await getJson(`${base}/api/usage`, 20_000)

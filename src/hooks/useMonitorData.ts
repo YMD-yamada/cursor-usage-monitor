@@ -63,15 +63,15 @@ export function useMonitorData() {
     }, 1200)
 
     const metricsTimer = window.setInterval(() => {
-      void loadMetrics()
-    }, 2000)
-
-    const tasksTimer = window.setInterval(() => {
-      void loadTasks()
+      if (!document.hidden) void loadMetrics()
     }, 5000)
 
+    const tasksTimer = window.setInterval(() => {
+      if (!document.hidden) void loadTasks()
+    }, 8000)
+
     const usageTimer = window.setInterval(() => {
-      void loadUsage(false)
+      if (!document.hidden) void loadUsage(false)
     }, 60000)
 
     return () => {

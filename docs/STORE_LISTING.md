@@ -53,14 +53,14 @@ Cursor, usage, quota, billing, widget, developer tools
 
 ### Packages
 
-- `Usageboard-1.0.0-win-arm64.appx`（Arm64、優先 1）
-- `Usageboard-1.0.0-win-x64.appx`（X64、優先 2）
+- `Usageboard-1.1.0-win-arm64.appx`（Arm64、優先 1）
+- `Usageboard-1.1.0-win-x64.appx`（X64、優先 2）
 - デバイスは **Windows.Desktop だけ**
 - `runFullTrust` の黄色警告はそのまま残してよい（Electron デスクトップ常駐に必要）
 
 ### Pricing and availability
 
-- 価格: **無料**
+- 価格: **無料**（アプリ内課金なし。任意の GitHub Sponsors のみ）
 - 国と地域: **すべての国**（少なくとも 日本 + 米国）
 - 公開: **認定が終わり次第公開**
 - 試用版: **なし**

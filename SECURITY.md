@@ -7,10 +7,16 @@ This app runs **on your PC** and reads your local Cursor login session to call C
 ## Guarantees
 
 - HTTP API binds to `127.0.0.1` only (not LAN / public internet)
+- Requests whose `Host` is not `127.0.0.1` / `localhost` are rejected
 - CORS allowlist is limited to local Vite / app origins
 - Access tokens are never written to disk by this app and are not returned by the HTTP API
 - Email / user id are redacted from API JSON responses
-- No third-party telemetry or remote logging
+- Usage / account errors do not echo Cursor API bodies
+- `/api/tasks` returns counts only (no chat titles, workspace paths, or shell commands)
+- `/api/metrics` returns aggregates only (no process path / PID lists)
+- Renderer cannot open arbitrary URLs (allowlisted Cursor / GitHub / legal hub only)
+- No third-party telemetry, ads, or remote logging
+- Optional GitHub Sponsors link is outbound-only; the app stays free
 
 ## Not in scope
 

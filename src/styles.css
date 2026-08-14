@@ -1256,6 +1256,26 @@ button {
   accent-color: var(--accent);
 }
 
+.support-row {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.text-link {
+  color: var(--accent-2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.text-link:hover {
+  color: var(--text);
+}
+
 .expanded-actions {
   display: flex;
   gap: 6px;
