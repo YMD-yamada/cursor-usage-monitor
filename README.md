@@ -1,30 +1,35 @@
-# Usageboard
+# Usageboard for Cursor
 
-Resident desktop widget for **Cursor** users (Windows / Electron). Store name: **Usageboard**.
+毎日 **Cursor** を使う人向けの、非公式 Windows 常駐ウィジェット。公式と同じ2プール（Cursor Models / Other Models）を横に置きます。
 
-- Visualize Usage as two official pools (Cursor Models / Other Models)
-- Explain billing / model pools in-app
-- Save a local “no on-demand / stretch plan / change plan when needed” ops preference and deep-link to Cursor Dashboard
-- Show Cursor process CPU / memory
-- 14-day Usage area charts (compact + expanded)
+対象: Windows で Cursor にサインインしている個人開発者。従量の不意打ちを避け、ダッシュボード往復を減らしたい人。  
+非対象: Cursor を使っていない人。公式の代替が欲しい人。
+
+> Not an official Cursor product. Not affiliated with Cursor / Anysphere. Reads your **local** Cursor session and calls Cursor dashboard APIs as you.
 
 ## Install
 
-Windows 向けの無料インストーラー:
+| 経路 | 価格 |
+|------|------|
+| [Microsoft Store](https://personal-site-taupe-gamma.vercel.app/apps/usageboard/)（審査後） | 買い切り ¥980 / $6.99 |
+| [GitHub Release](https://github.com/YMD-yamada/cursor-usage-monitor/releases/latest) | コミュニティビルド |
+| ソースから `npm start` | MIT・無料 |
 
-https://github.com/YMD-yamada/cursor-usage-monitor/releases/latest
+Cursor 本体の契約は [cursor.com/pricing](https://cursor.com/pricing) のみ。年払いは公式で月額比およそ20%安いです。**Cursor の紹介・アフィリエイトは公式に終了**しています（[一次情報](https://cursor.com/help/account-and-billing/referral-program)）。このアプリに紹介トラッキングはありません。
 
-- `Usageboard-*-win-x64-setup.exe`（推奨）
-- portable exe はインストールなし
-- Microsoft Store は審査提出待ち（無料・アプリ内課金なし）
+## What it does
 
-> Not an official Cursor product. Reads your **local** Cursor session and calls Cursor dashboard APIs as you.
+- 自分の Cursor Models / Other Models ％を常駐表示
+- 従量 ON/OFF、更新までの日数
+- Spending / Billing / Pricing への公式ディープリンク
+- ローカルの「従量を使わない」運用メモ
+
+できないこと: 従量の API 切替、プラン変更、他人の Usage。
 
 ## Requirements
 
 - Windows 10/11
-- [Cursor](https://cursor.com/) installed and signed in
-- Node.js 20+ (source run). The Store / packaged build does not need a separate Node install.
+- Cursor installed and signed in
 
 ## Setup (from source)
 
@@ -36,56 +41,21 @@ npm run build
 npm start
 ```
 
-Autostart on login:
+Autostart: `npm run install:resident`  
+Remove: `npm run uninstall:resident`
 
-```bash
-npm run install:resident
-```
+## Privacy
 
-Remove autostart:
+- Auth: local Cursor `state.vscdb` only
+- Network: `cursor.com` dashboard APIs; server on `127.0.0.1`
+- No third-party Usage upload — [SECURITY.md](./SECURITY.md)
 
-```bash
-npm run uninstall:resident
-```
+## Docs
 
-## What it can / cannot do
-
-| Can | Cannot (opens official pages) |
-|-----|--------------------------------|
-| Monitor Usage, bonus, on-demand status | Toggle on-demand via API |
-| Save ops prefs locally | Change your paid plan via API |
-| One-click Spending / Billing / Pricing | Read another user’s Usage |
-
-Disable on-demand: [Spending](https://cursor.com/dashboard/spending) → Monthly Limit → **Disabled**  
-Change plan: [Billing](https://cursor.com/dashboard/billing)  
-Pricing: [Pricing](https://cursor.com/pricing)
-
-## Privacy & security
-
-- Auth: local Cursor `state.vscdb` session only
-- Network: `cursor.com` dashboard APIs only; API server listens on `127.0.0.1`
-- Prefs: Electron/`localStorage` on this PC
-- No third-party Usage upload
-- Details: [SECURITY.md](./SECURITY.md)
-
-## Controls
-
-- **▾** … details (usage / ops / billing guide)
-- **–** … minimize to taskbar
-- **×** … hide to tray (keeps running)
-- Tray → Quit
-
-## Development
-
-```bash
-npm run desktop:dev
-```
-
-```bash
-npm run smoke
-```
-
-Microsoft Store packaging: [docs/STORE_LISTING.md](./docs/STORE_LISTING.md) · [docs/RELEASE_FLOW.md](./docs/RELEASE_FLOW.md)
+- [Persona](./docs/PERSONA.md)
+- [Affiliate (none)](./docs/AFFILIATE.md)
+- [Store listing](./docs/STORE_LISTING.md)
+- [Release flow](./docs/RELEASE_FLOW.md)
 
 ## License
 

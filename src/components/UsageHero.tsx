@@ -55,6 +55,9 @@ type Props = {
   otherExhausted?: boolean
   onDemandAllowed?: boolean
   loading?: boolean
+  signedIn?: boolean
+  planLabel?: string
+  cycleDaysLeft?: number | null
   onToggle?: () => void
 }
 
@@ -66,27 +69,35 @@ export function DualPoolHero({
   otherExhausted,
   onDemandAllowed,
   loading,
+  signedIn = true,
+  planLabel,
+  cycleDaysLeft,
   onToggle,
 }: Props) {
+  const meta = (() => {
+    if (loading) return 'Cursor の Usage を読み込み中…'
+    if (!signedIn) return 'Cursor にサインインすると2プールが出ます'
+    const plan = planLabel ? planLabel : 'Cursor'
+    const cycle =
+      cycleDaysLeft != null ? ` · 更新まで${cycleDaysLeft}日` : ''
+    return `${plan} · 従量 ${onDemandAllowed ? 'ON' : 'OFF'}${cycle}`
+  })()
+
   return (
     <button type="button" className="pool-hero" onClick={() => onToggle?.()}>
       <div className="pool-hero-grid">
         <PoolMark
           label="Cursor Models"
-          percent={loading ? 0 : cursorPct}
+          percent={loading || !signedIn ? 0 : cursorPct}
           exhausted={cursorExhausted}
         />
         <PoolMark
           label="Other Models"
-          percent={loading ? 0 : otherPct}
+          percent={loading || !signedIn ? 0 : otherPct}
           exhausted={otherExhausted}
         />
       </div>
-      <p className="pool-hero-meta">
-        {loading
-          ? 'Usage を読み込み中…'
-          : `従量 ${onDemandAllowed ? 'ON' : 'OFF'} · 公式と同じ2プール`}
-      </p>
+      <p className="pool-hero-meta">{meta}</p>
     </button>
   )
 }

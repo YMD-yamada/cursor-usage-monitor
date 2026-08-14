@@ -29,6 +29,7 @@ export default function App() {
     usage,
     metrics,
     tasks,
+    account,
     usageError,
     metricsError,
     tasksError,
@@ -118,6 +119,7 @@ export default function App() {
         >
           <span className="brand-mark" aria-hidden="true" />
           <span className="brand-text">Usageboard</span>
+          <span className="brand-sub">for Cursor</span>
         </div>
         <div className="chrome-actions">
           <button
@@ -218,23 +220,34 @@ export default function App() {
         cursorExhausted={Boolean(usage?.breakdown?.cursorModels?.exhausted)}
         otherExhausted={Boolean(usage?.breakdown?.otherModels?.exhausted)}
         onDemandAllowed={usage?.breakdown?.onDemand.allowed}
-        loading={!usage}
+        loading={!usage && !usageError}
+        signedIn={account?.signedIn !== false && !/サインイン/i.test(usageError || '')}
+        planLabel={
+          usage?.guide?.current.plan ||
+          account?.membershipType ||
+          undefined
+        }
+        cycleDaysLeft={usage?.guide?.current.cycleDaysLeft}
         onToggle={() => void toggle()}
       />
 
-      {usage?.guide ? <GuideChip usage={usage} /> : null}
+      {account?.signedIn === false ? (
+        <p className="guide-chip danger">Cursor を開いてサインインしてください</p>
+      ) : usage?.guide ? (
+        <GuideChip usage={usage} />
+      ) : null}
 
       {usage?.charts?.daily?.length ? (
         <UsageMiniBars daily={usage.charts.daily} />
       ) : (
         <p className="chart-empty compact-empty">
-          {taskSummary === '静か' ? '14日グラフを準備中' : `Tasks ${taskSummary}`}
+          {taskSummary === '静か' ? 'Cursor の14日グラフを準備中' : `Agents ${taskSummary}`}
         </p>
       )}
 
       <div className="share-block" title={ramTitle}>
         <div className="share-head">
-          <span>この PC の RAM</span>
+          <span>Cursor の RAM</span>
           <span className="mono">
             {metrics
               ? `${sysMem.toFixed(0)}% · Cursor ${cursorMemPct.toFixed(0)}%`
@@ -296,20 +309,27 @@ export default function App() {
             <span>ログイン時に自動起動</span>
           </label>
           <p className="support-row">
-            無料・非公式
+            Cursor 専用 · 非公式
             <button
               type="button"
               className="text-link"
-              onClick={() => openCursorLink(CURSOR_LINKS.sponsors)}
+              onClick={() => openCursorLink(CURSOR_LINKS.pricing)}
             >
-              任意の支援
+              年払いで約20%安
             </button>
             <button
               type="button"
               className="text-link"
               onClick={() => openCursorLink(CURSOR_LINKS.github)}
             >
-              GitHub
+              ソース
+            </button>
+            <button
+              type="button"
+              className="text-link"
+              onClick={() => openCursorLink(CURSOR_LINKS.storeLegal)}
+            >
+              買い切り Store
             </button>
           </p>
           <div className="expanded-actions">

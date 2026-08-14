@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { UsageGuide, UsagePayload } from '../lib/format'
 import { formatUsd } from '../lib/format'
-import { OpsPanel } from './OpsPanel'
+import { CURSOR_LINKS, openCursorLink } from '../lib/cursorLinks'
 
 type Props = {
   usage: UsagePayload
@@ -218,7 +218,7 @@ export function BillingGuide({ usage }: Props) {
       {tab === 'plans' && (
         <div className="guide-panel">
           <p className="guide-intro">
-            Pro 据え置きでも運用できます。足りなくなったときの選択肢を並べます。
+            Cursor のプラン比較です。年払いは公式で月額比およそ20%安いです。紹介プログラムは公式に終了しています。
           </p>
           <div className="plan-table">
             {guide.plans?.map((p) => (
@@ -257,20 +257,61 @@ export function BillingGuide({ usage }: Props) {
               </li>
             ))}
           </ul>
+          <div className="guide-callout">
+            <p className="pool-title">Cursor の公式割引</p>
+            <p className="pool-body">
+              このアプリは Cursor のアフィリエイトではありません。割引は公式ページだけです。
+            </p>
+            <div className="guide-links">
+              <button
+                type="button"
+                className="text-link"
+                onClick={() => openCursorLink(CURSOR_LINKS.pricing)}
+              >
+                Pricing（年払い）
+              </button>
+              <button
+                type="button"
+                className="text-link"
+                onClick={() => openCursorLink(CURSOR_LINKS.studentDiscount)}
+              >
+                学生向け
+              </button>
+              <button
+                type="button"
+                className="text-link"
+                onClick={() => openCursorLink(CURSOR_LINKS.referralHelp)}
+              >
+                紹介は終了
+              </button>
+            </div>
+          </div>
           <div className="guide-links">
-            <a href={guide.dashboardUrl} target="_blank" rel="noreferrer">
+            <button
+              type="button"
+              className="text-link"
+              onClick={() => openCursorLink(guide.dashboardUrl)}
+            >
               Usage
-            </a>
-            <a
-              href={guide.spendingUrl || 'https://cursor.com/dashboard/spending'}
-              target="_blank"
-              rel="noreferrer"
+            </button>
+            <button
+              type="button"
+              className="text-link"
+              onClick={() =>
+                openCursorLink(
+                  guide.spendingUrl || CURSOR_LINKS.spending,
+                )
+              }
             >
               Spending
-            </a>
-            <a href={guide.docsUrl} target="_blank" rel="noreferrer">
+            </button>
+            <button
+              type="button"
+              className="text-link"
+              onClick={() => openCursorLink(guide.docsUrl)}
+            >
               Pricing docs
-            </a>
+            </button>
           </div>
         </div>
       )}

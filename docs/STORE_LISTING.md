@@ -1,40 +1,48 @@
 # Microsoft Store listing — Usageboard
 
 Reserved / display name: **Usageboard**  
+Subtitle / short name: **for Cursor**  
 Fallback if taken: **Usageboard by ymd**
 
-Not an official Cursor product. Do not claim Cursor affiliation or dashboard replacement.
+Not an official Cursor product. Do not claim Cursor affiliation, partnership, or dashboard replacement.
+
+## Persona
+
+毎日 Windows の Cursor でコードを書く人。自分の Cursor Models / Other Models を常時見たい。従量の不意打ちを避けたい。
 
 ## Japanese (primary)
 
 **短い説明**  
-Cursor の Usage（Cursor Models / Other Models）を、この PC の常駐ウィジェットで見ます。
+Cursor ユーザー専用。自分の Usage 2プールを常駐表示します。
 
 **長い説明**  
-Usageboard は、Windows 向けの非公式ウィジェットです。Cursor にサインインした自分のアカウントの Usage を、公式と同じ2つのプール（Cursor Models と Other Models）で常駐表示します。従量課金の ON/OFF と、公式ダッシュボードへの案内も出します。
+Usageboard は、Cursor を毎日使う人向けの非公式 Windows ウィジェットです。公式ダッシュボードと同じ2つのプール（Cursor Models と Other Models）を、エディタの横に常時出します。従量が ON かどうか、更新までの日数、Spending / Billing への案内も出します。
 
-このアプリは Cursor 公式製品ではありません。他の人の Usage は見えません。オンデマンド課金の切替やプラン変更は、公式の Spending / Billing ページで行います。データはインターネット上の自社サーバーへ送りません。Cursor のダッシュボード API だけを、この PC のログインセッションで呼び出します。広告・アカウント登録・解析ツールはありません。
+Cursor 公式製品ではありません。提携・アフィリエイトもありません（Cursor の紹介プログラムは公式に終了）。他の人の Usage は見えません。従量の切替やプラン変更は公式ページで行います。データは自社サーバーへ送りません。この PC の Cursor ログインで、cursor.com のダッシュボード API だけを呼びます。広告・解析ツール・アプリ内課金はありません。買い切りです。
+
+ソースは GitHub で公開（MIT）。Store 版はインストールしやすい買い切りパッケージです。
 
 **キーワード**  
-Cursor, Usage, 使用量, 課金, ウィジェット, 開発者ツール
+Cursor, Usage, Cursor Models, 従量, ウィジェット, 開発者
 
 ## English
 
 **Short description**  
-See your Cursor Usage pools on a small always-on Windows widget.
+For Cursor users: your two Usage pools, always on.
 
 **Full description**  
-Usageboard is an unofficial Windows widget. It shows your own Cursor Usage as two pools — Cursor Models and Other Models — matching the official dashboard. It also shows on-demand status and opens official Spending / Billing pages.
+Usageboard is an unofficial Windows widget for people who live in Cursor. It shows your own Cursor Models and Other Models pools the same way the official dashboard does, plus on-demand status and one-tap Spending / Billing.
 
-Not affiliated with Cursor or Anysphere. It cannot see another person’s Usage, and it cannot change your plan or on-demand setting by itself. No ads, no account of our own, no analytics. It reads the local Cursor session and calls Cursor dashboard APIs as you.
+Not affiliated with Cursor or Anysphere. Cursor has no public affiliate program; this app does not add referral tracking. It cannot see another person’s Usage. No ads, no analytics, no in-app purchases. One-time purchase. Source is MIT on GitHub.
 
 **Keywords**  
-Cursor, usage, quota, billing, widget, developer tools
+Cursor, usage, Cursor Models, on-demand, widget, developer
 
 ## Age / properties
 
 - Age: 3+ / Everyone
-- Category: Developer tools (or Productivity)
+- Category: Developer tools
+- Price: **¥980 / $6.99** 買い切り（IAP なし）
 - Privacy URL: https://personal-site-taupe-gamma.vercel.app/apps/usageboard/
 - Support URL: https://personal-site-taupe-gamma.vercel.app/support/
 - Website: https://github.com/YMD-yamada/cursor-usage-monitor
@@ -43,67 +51,52 @@ Cursor, usage, quota, billing, widget, developer tools
 
 ## Submission
 
-1. Partner Center で **Usageboard** を予約（Timeboard と同じ個人開発者アカウント。入口は [storedeveloper.microsoft.com](https://storedeveloper.microsoft.com)）
-2. Product identity を `electron-builder.yml` の `appx` に反映して `npm run pack:store`
-3. Partner Center の **Packages** に arm64 / x64 の `.appx` をアップロード
-4. 下記「入力早見表」どおりに listings / age / properties を埋めて提出
+1. Partner Center で **Usageboard** を予約
+2. `npm run pack:store`（成果物は 1.2.0 の appx）
+3. Packages に arm64 / x64 の `.appx` をアップロード
+4. 価格を ¥980（または $6.99）にして提出
 5. 公開 URL が付いたら `storeUrls.windows` を personal-site に追記
 
 ## Partner Center 入力早見表
 
 ### Packages
 
-- `Usageboard-1.1.0-win-arm64.appx`（Arm64、優先 1）
-- `Usageboard-1.1.0-win-x64.appx`（X64、優先 2）
+- `Usageboard-1.2.0-win-arm64.appx`
+- `Usageboard-1.2.0-win-x64.appx`
 - デバイスは **Windows.Desktop だけ**
-- `runFullTrust` の黄色警告はそのまま残してよい（Electron デスクトップ常駐に必要）
+- `runFullTrust` の黄色警告はそのまま残してよい
 
 ### Pricing and availability
 
-- 価格: **無料**（アプリ内課金なし。任意の GitHub Sponsors のみ）
-- 国と地域: **すべての国**（少なくとも 日本 + 米国）
+- 価格: **¥980**（USD $6.99）買い切り
+- 試用版: **なし**（GitHub ソースが無料の試用になる）
+- 国と地域: **すべての国**
 - 公開: **認定が終わり次第公開**
-- 試用版: **なし**
 
 ### Properties
 
-- カテゴリ: **Developer tools**（第2があれば Productivity）
-- プライバシー ポリシー URL: `https://personal-site-taupe-gamma.vercel.app/apps/usageboard/`
-- サポート URL: `https://personal-site-taupe-gamma.vercel.app/support/`
-- Web サイト: `https://github.com/YMD-yamada/cursor-usage-monitor`
+- カテゴリ: **Developer tools**
+- プライバシー / サポート / Web は上の URL
 - アクセシビリティ対応: **いいえ**
-- ハードウェア / Xbox / ゲーム機能: **すべていいえ**
+- ハードウェア / Xbox / ゲーム: **すべていいえ**
 
 ### Age ratings
 
-ほぼすべて **いいえ**。
-
-- 暴力・ホラー・性的表現・裸体・薬物・ギャンブル: いいえ
-- チャット / UGC: いいえ
-- 位置情報を他人と共有: いいえ
-- アプリ内課金: いいえ
-- 広告: いいえ
-- 不特定の Web をアプリ内で開く: いいえ（公式ダッシュボードは外部ブラウザ）
+ほぼすべて **いいえ**。アプリ内課金・広告も **いいえ**（アプリ価格は買い切り）。
 
 ### Store listings
 
-言語は **日本語（ja-JP）を主**、英語（en-US）も追加。上の短い説明 / 長い説明 / キーワードを貼る。
-
-画面: `store/screenshot-1366x768.png`（1366×768）  
-「Cursor 公式」「公式ダッシュボードの代替」は書かない。
+日本語を主、英語も追加。上の短い説明 / 長い説明 / キーワードを貼る。  
+「Cursor 公式」「提携」「紹介で稼げる」は書かない。
 
 ### Submission options
 
-`runFullTrust` の理由:
-
 ```
-Usageboard is an Electron desktop widget. It needs runFullTrust to stay resident, read the local Cursor session, and show Usage on this PC. It does not upload Usage to our servers.
+Usageboard is an Electron widget for Cursor users. It needs runFullTrust to stay resident, read the local Cursor session, and show Usage on this PC. It does not upload Usage to our servers.
 ```
 
 認定担当者へのメモ:
 
 ```
-Unofficial widget. Requires Cursor installed and signed in. Open the widget to see Cursor Models / Other Models percents. Not affiliated with Cursor. Data stays on this PC except Cursor dashboard API calls as the signed-in user.
+Unofficial. Requires Cursor installed and signed in. Shows Cursor Models / Other Models percents. Not affiliated with Cursor. Paid app, no IAP. GitHub source is MIT.
 ```
-
-全部 Save したあと、概要に戻って **Submit for certification / 認定のために提出**。

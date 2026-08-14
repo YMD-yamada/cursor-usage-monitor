@@ -112,6 +112,12 @@ button {
   color: var(--text);
 }
 
+.brand-sub {
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
 .chrome-actions {
   display: flex;
   gap: 2px;

@@ -490,7 +490,7 @@ function createWindow(url) {
 
 function createTray() {
   tray = new Tray(createTrayIcon())
-  tray.setToolTip('Usageboard（常駐中）')
+  tray.setToolTip('Usageboard for Cursor（常駐中）')
   rebuildTrayMenu()
   tray.on('click', () => {
     if (!mainWindow) {

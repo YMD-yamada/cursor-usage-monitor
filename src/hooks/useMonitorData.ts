@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { MetricsPayload, TasksPayload, UsagePayload } from '../lib/format'
 
+export type AccountPayload = {
+  signedIn: boolean
+  membershipType: string | null
+  subscriptionStatus: string | null
+}
+
 async function getJson<T>(url: string): Promise<T> {
   const res = await fetch(url)
   const data = await res.json()
@@ -17,7 +23,17 @@ export function useMonitorData() {
   const [usageError, setUsageError] = useState<string | null>(null)
   const [metricsError, setMetricsError] = useState<string | null>(null)
   const [tasksError, setTasksError] = useState<string | null>(null)
+  const [account, setAccount] = useState<AccountPayload | null>(null)
   const [refreshingUsage, setRefreshingUsage] = useState(false)
+
+  const loadAccount = useCallback(async () => {
+    try {
+      const data = await getJson<AccountPayload>('/api/account')
+      setAccount(data)
+    } catch {
+      setAccount({ signedIn: false, membershipType: null, subscriptionStatus: null })
+    }
+  }, [])
 
   const loadMetrics = useCallback(async () => {
     try {
@@ -58,6 +74,7 @@ export function useMonitorData() {
     void loadUsage(true)
     void loadMetrics()
     void loadTasks()
+    void loadAccount()
     const warm = window.setTimeout(() => {
       void loadMetrics()
     }, 1200)
@@ -80,12 +97,13 @@ export function useMonitorData() {
       window.clearInterval(tasksTimer)
       window.clearInterval(usageTimer)
     }
-  }, [loadMetrics, loadTasks, loadUsage])
+  }, [loadMetrics, loadTasks, loadUsage, loadAccount])
 
   return {
     usage,
     metrics,
     tasks,
+    account,
     usageError,
     metricsError,
     tasksError,

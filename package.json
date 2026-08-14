@@ -1,9 +1,9 @@
 {
   "name": "cursor-usage-monitor",
   "productName": "Usageboard",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
-  "description": "Unofficial resident widget for Cursor Usage pools, billing guide, and dashboard deep-links",
+  "description": "Unofficial always-on widget for Cursor users: Cursor Models / Other Models usage, on-demand status, official dashboard deep-links",
   "license": "MIT",
   "author": "ymd",
   "homepage": "https://github.com/YMD-yamada/cursor-usage-monitor",

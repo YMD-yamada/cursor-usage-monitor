@@ -58,7 +58,7 @@ Default UX nudges: **no on-demand**, stretch base plan via Cursor Models, plan c
 - This PC: `npm run install:resident` (Startup + Start Menu). Smoke 2026-08-14: 7/7, signedIn Pro, CM ~32% / OM 0%.
 
 - Store hub: https://personal-site-taupe-gamma.vercel.app/apps/usageboard/ (listing prepared; Partner Center submission is human-must)
-- Store name **Usageboard** 1.1.0; dual-pool compact UI; drag no longer grows the window
+- Store name **Usageboard for Cursor** 1.2.0. Persona: daily Windows Cursor user. Store ¥980. No Cursor affiliate (program ended).
 
 - **Aligned with official 2026 dashboard**: primary display is two pools — **Cursor Models** (`autoPercentUsed`) and **Other Models** (`apiPercentUsed`). Included $ / bonus are secondary accounting only (official Usage no longer leads with a single combined % or $ for self-serve).
 
