@@ -5,41 +5,26 @@ import { fileURLToPath } from 'node:url'
 import { spawn } from 'node:child_process'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const startupDir = path.join(
-  process.env.APPDATA || '',
-  'Microsoft',
-  'Windows',
-  'Start Menu',
-  'Programs',
-  'Startup',
-)
-const startMenuDir = path.join(
-  process.env.APPDATA || '',
-  'Microsoft',
-  'Windows',
-  'Start Menu',
-  'Programs',
-)
-const vbsPath = path.join(startupDir, 'CursorUsageMonitor.vbs')
-const launchJs = path.join(root, 'scripts', 'launch-resident.mjs')
 const settingsPath = path.join(root, '.resident.json')
 
-fs.mkdirSync(startupDir, { recursive: true })
-fs.mkdirSync(startMenuDir, { recursive: true })
+function run(file, args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      'powershell.exe',
+      ['-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', file, ...args],
+      { cwd: root, stdio: 'inherit', windowsHide: true },
+    )
+    child.on('exit', (code) => {
+      if (code) reject(new Error(`${path.basename(file)} failed: ${code}`))
+      else resolve()
+    })
+  })
+}
 
-const rootEscaped = root.replace(/\\/g, '\\\\')
-const launchEscaped = launchJs.replace(/\\/g, '\\\\')
-const vbs = [
-  'Set sh = CreateObject("WScript.Shell")',
-  `sh.CurrentDirectory = "${rootEscaped}"`,
-  `sh.Run "node ""${launchEscaped}""", 0, False`,
-  '',
-].join('\r\n')
-fs.writeFileSync(vbsPath, vbs, 'utf8')
-
-// Start Menu launcher (same silent VBS)
-const startMenuVbs = path.join(startMenuDir, 'Cursor Usage Monitor.vbs')
-fs.writeFileSync(startMenuVbs, vbs, 'utf8')
+await run(path.join(root, 'scripts', 'register-windows-app.ps1'), [
+  '-RepoRoot',
+  root,
+])
 
 fs.writeFileSync(
   settingsPath,
@@ -47,8 +32,12 @@ fs.writeFileSync(
     {
       autostartConfigured: true,
       enabledAt: new Date().toISOString(),
-      startupVbs: vbsPath,
-      startMenuVbs,
+      searchNames: [
+        'Usageboard for Cursor',
+        'Usageboard',
+        'Cursor Usageboard',
+        'Cursor Usage Monitor',
+      ],
     },
     null,
     2,
@@ -56,11 +45,8 @@ fs.writeFileSync(
   'utf8',
 )
 
-console.log('Installed resident autostart:')
-console.log(`  Startup: ${vbsPath}`)
-console.log(`  Start Menu: ${startMenuVbs}`)
+console.log('Installed Usageboard for Cursor (Start Menu / Search / Startup).')
 
-// Launch now
 await new Promise((resolve, reject) => {
   const child = spawn('node', [path.join(root, 'scripts', 'launch-resident.mjs')], {
     cwd: root,
@@ -73,4 +59,4 @@ await new Promise((resolve, reject) => {
   })
 })
 
-console.log('Resident widget started. Tray icon = 常駐中. 「終了」で完全停止。')
+console.log('Resident widget started. Tray = 常駐中. 「終了」で完全停止。')

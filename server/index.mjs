@@ -77,8 +77,11 @@ app.get('/api/account', (_req, res) => {
   try {
     const auth = readCursorAuth()
     res.json({
-      membershipType: auth.membershipType,
-      subscriptionStatus: auth.subscriptionStatus,
+      membershipType:
+        usageCache.data?.account?.membershipType || auth.membershipType,
+      subscriptionStatus:
+        usageCache.data?.account?.subscriptionStatus ||
+        auth.subscriptionStatus,
       signedIn: Boolean(auth.userId),
     })
   } catch (error) {

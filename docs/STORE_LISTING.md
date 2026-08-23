@@ -1,7 +1,7 @@
 # Microsoft Store listing — Usageboard
 
-Reserved / display name: **Usageboard**  
-Subtitle / short name: **for Cursor**  
+Reserved / display name: **Usageboard for Cursor**  
+Identity (Partner Center, do not change): **Usageboard** / `KentoYamada.Usageboard`  
 Fallback if taken: **Usageboard by ymd**
 
 Not an official Cursor product. Do not claim Cursor affiliation, partnership, or dashboard replacement.
@@ -13,7 +13,7 @@ Not an official Cursor product. Do not claim Cursor affiliation, partnership, or
 ## Japanese (primary)
 
 **短い説明**  
-Cursor ユーザー専用。自分の Usage 2プールを常駐表示します。
+非公式。Cursor の Usage 2プールを常駐表示します。
 
 **長い説明**  
 Usageboard は、Cursor を毎日使う人向けの非公式 Windows ウィジェットです。公式ダッシュボードと同じ2つのプール（Cursor Models と Other Models）を、エディタの横に常時出します。従量が ON かどうか、更新までの日数、Spending / Billing への案内も出します。

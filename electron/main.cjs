@@ -16,6 +16,10 @@ const fs = require('fs')
 const PORT = Number(process.env.PORT || 8787)
 const isDev = process.env.CURSOR_MONITOR_DEV === '1'
 const APP_ROOT = path.join(__dirname, '..')
+const APP_ID = 'jp.ymd.usageboard'
+
+app.setName('Usageboard for Cursor')
+app.setAppUserModelId(APP_ID)
 
 const COMPACT = { width: 320, height: 348 }
 const EXPANDED = { width: 400, height: 780 }
@@ -156,10 +160,30 @@ function waitForUrl(url, attempts = 60) {
   return waitForServer(url, attempts)
 }
 
+function getIconPath(file = 'icon.png') {
+  const candidates = [
+    path.join(getAppRoot(), 'build', file),
+    path.join(APP_ROOT, 'build', file),
+  ]
+  return candidates.find((p) => fs.existsSync(p)) || null
+}
+
+function createAppIcon() {
+  const ico = getIconPath('icon.ico')
+  const png = getIconPath('icon.png')
+  const file = ico || png
+  if (!file) return nativeImage.createEmpty()
+  const image = nativeImage.createFromPath(file)
+  return image.isEmpty() ? nativeImage.createEmpty() : image
+}
+
 function createTrayIcon() {
-  const pngBase64 =
-    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAhElEQVQ4T2NkYGD4z0ABYBzVMKoBBgYGBv+/f/8zEBlGDRg1gIEBGwN+//7N8P//f4b~/P8Z/v37x/D371+Gf//+Mfz794/h379/DP/+/WP4+/cvw79//xj+/v3L8O/fP4Z///4x/P37l+Hfv38M//79Y/j79y/Dv3//GP79+8fw798/hn///jH8/fuX4d+/f4wApVwY/5m2Z0YAAAAASUVORK5CYII='
-  return nativeImage.createFromDataURL(`data:image/png;base64,${pngBase64}`)
+  const small =
+    getIconPath('icon-32.png') || getIconPath('icon-16.png') || getIconPath('icon.png')
+  if (!small) return createAppIcon()
+  const image = nativeImage.createFromPath(small)
+  if (image.isEmpty()) return createAppIcon()
+  return image.resize({ width: 16, height: 16 })
 }
 
 function placeOnRightEdge(win, size) {
@@ -399,6 +423,7 @@ function rebuildTrayMenu() {
 
 function createWindow(url) {
   const size = currentSize()
+  const appIcon = createAppIcon()
   mainWindow = new BrowserWindow({
     width: size.width,
     height: size.height,
@@ -417,7 +442,8 @@ function createWindow(url) {
     alwaysOnTop: true,
     hasShadow: true,
     backgroundColor: '#00000000',
-    title: 'Usageboard',
+    title: 'Usageboard for Cursor',
+    icon: appIcon.isEmpty() ? undefined : appIcon,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,

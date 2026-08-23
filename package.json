@@ -1,7 +1,7 @@
 {
   "name": "cursor-usage-monitor",
-  "productName": "Usageboard",
-  "version": "1.2.0",
+  "productName": "Usageboard for Cursor",
+  "version": "1.2.1",
   "private": true,
   "description": "Unofficial always-on widget for Cursor users: Cursor Models / Other Models usage, on-demand status, official dashboard deep-links",
   "license": "MIT",
@@ -19,6 +19,7 @@
   "scripts": {
     "start": "node scripts/start-desktop.mjs",
     "install:resident": "node scripts/install-resident.mjs",
+    "install:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/register-windows-app.ps1",
     "uninstall:resident": "node scripts/uninstall-resident.mjs",
     "dev": "node scripts/dev-electron.mjs",
     "dev:web": "node scripts/dev.mjs",

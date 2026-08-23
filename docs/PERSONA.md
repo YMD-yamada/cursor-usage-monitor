@@ -1,4 +1,4 @@
-# Persona — Usageboard
+# Persona — Usageboard for Cursor
 
 ## Who it is for
 

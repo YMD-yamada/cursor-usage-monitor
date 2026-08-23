@@ -7,6 +7,7 @@ import http from 'node:http'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const distIndex = path.join(root, 'dist', 'index.html')
+const electronExe = path.join(root, 'node_modules', 'electron', 'dist', 'electron.exe')
 const electronCli = path.join(root, 'node_modules', 'electron', 'cli.js')
 const PORT = Number(process.env.PORT || 8787)
 
@@ -44,9 +45,12 @@ if (!fs.existsSync(distIndex)) {
   await runSync('npm', ['run', 'build'])
 }
 
-// If another copy is already up, second-instance focus handles it;
-// still launch electron so the lock can surface the existing window.
-const child = spawn(process.execPath, [electronCli, '.'], {
+// Always pass the app directory. Bare electron.exe opens the official default window.
+const winElectron = process.platform === 'win32' && fs.existsSync(electronExe)
+const child = spawn(
+  winElectron ? electronExe : process.execPath,
+  winElectron ? [root] : [electronCli, root],
+  {
   cwd: root,
   detached: true,
   stdio: 'ignore',

@@ -130,6 +130,8 @@ async function probe(port) {
   const accountOk =
     account.status === 200 &&
     account.json?.signedIn === true &&
+    typeof account.json?.membershipType === 'string' &&
+    account.json.membershipType.length > 0 &&
     !account.json?.email &&
     !account.json?.userId
   record(
@@ -193,14 +195,18 @@ async function probe(port) {
       usage.json?.totalCost != null)
   const accountRedacted =
     !usage.json?.account?.email ||
-    usage.json.account.email === '[redacted]'
+    usage.json?.account?.email === '[redacted]'
+  const membershipOk = Boolean(usage.json?.account?.membershipType)
+  const includedOk =
+    typeof usage.json?.spend?.includedUsd === 'number' &&
+    typeof usage.json?.spend?.limitUsd === 'number'
   const cm = bd?.cursorModels?.percent ?? bd?.auto?.percent
   const om = bd?.otherModels?.percent ?? bd?.named?.percent
   record(
     'GET /api/usage',
-    usageOk && accountRedacted,
+    usageOk && accountRedacted && membershipOk && includedOk,
     usage.status === 200
-      ? `cached=${Boolean(usage.json?.cached)} pools=CM:${cm}%/OM:${om}% redact=${accountRedacted}`
+      ? `cached=${Boolean(usage.json?.cached)} plan=${usage.json?.account?.membershipType} pools=CM:${cm}%/OM:${om}% included=${usage.json?.spend?.includedUsd}/${usage.json?.spend?.limitUsd}`
       : `status=${usage.status} ${usage.json?.error || usage.body?.slice(0, 120) || ''}`,
   )
 }

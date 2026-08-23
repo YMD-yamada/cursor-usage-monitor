@@ -20,6 +20,7 @@ const CURSOR_MODEL_HINTS = new Set([
   'vega-high',
   'vega-xhigh',
   'grok-4.5',
+  'grok-4.6',
 ])
 
 function authHeaders(sessionToken) {
@@ -111,6 +112,7 @@ function classifyModel(model, autoBucketModels = []) {
     lower.startsWith('composer') ||
     lower.startsWith('cursor-grok') ||
     lower.startsWith('grok-4.5') ||
+    lower.startsWith('grok-4.6') ||
     lower.startsWith('vega') ||
     lower === 'default' ||
     lower === 'auto' ||
@@ -432,7 +434,10 @@ export async function fetchCursorUsage() {
   })
 
   const membershipType =
-    summary?.membershipType || auth.membershipType || me?.membershipType || null
+    summary?.membershipType ||
+    me?.membershipType ||
+    auth.membershipType ||
+    null
 
   const account = {
     email: auth.email || me?.email || null,

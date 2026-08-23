@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { spawn } from 'node:child_process'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const targets = [
@@ -30,6 +31,24 @@ for (const file of targets) {
     console.log('Removed', file)
   }
 }
+
+await new Promise((resolve) => {
+  const child = spawn(
+    'powershell.exe',
+    [
+      '-NoLogo',
+      '-NoProfile',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-File',
+      path.join(root, 'scripts', 'unregister-windows-app.ps1'),
+      '-RepoRoot',
+      root,
+    ],
+    { cwd: root, stdio: 'inherit', windowsHide: true },
+  )
+  child.on('exit', () => resolve())
+})
 
 const settingsPath = path.join(root, '.resident.json')
 if (fs.existsSync(settingsPath)) {

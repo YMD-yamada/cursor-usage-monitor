@@ -76,8 +76,16 @@ function buildDailyGeometry(
   return { points, costLine, costArea, eventsLine, maxCost, maxEvents, pad, baseline }
 }
 
-/** Compact 14-day cost area chart — always visible under the hero. */
-export function UsageMiniBars({ daily }: { daily: DailyUsagePoint[] }) {
+/** Compact cost area chart — official included $ plus 14-day event trend. */
+export function UsageMiniBars({
+  daily,
+  includedUsd,
+  limitUsd,
+}: {
+  daily: DailyUsagePoint[]
+  includedUsd?: number
+  limitUsd?: number
+}) {
   const [hover, setHover] = useState<number | null>(null)
   const width = 280
   const height = 48
@@ -88,14 +96,18 @@ export function UsageMiniBars({ daily }: { daily: DailyUsagePoint[] }) {
 
   if (!daily.length) return null
 
-  const total = daily.reduce((sum, d) => sum + d.costUsd, 0)
+  const eventTotal = daily.reduce((sum, d) => sum + d.costUsd, 0)
   const active = hover != null ? daily[hover] : null
+  const official =
+    includedUsd != null && limitUsd
+      ? `Included ${formatUsd(includedUsd)} / ${formatUsd(limitUsd)}`
+      : `イベント ${formatUsd(eventTotal)}`
 
   return (
     <div
       className="mini-bars"
       role="img"
-      aria-label={`直近14日のコスト合計 ${formatUsd(total)}`}
+      aria-label={`公式 Included ${official}`}
     >
       <svg
         className="mini-area-svg"
@@ -143,9 +155,9 @@ export function UsageMiniBars({ daily }: { daily: DailyUsagePoint[] }) {
         <span>
           {active
             ? `${dayLabel(active.date)} · ${formatUsd(active.costUsd)} · ${active.events}件`
-            : '14日コスト'}
+            : official}
         </span>
-        <span>{formatUsd(total)}</span>
+        <span>{active ? 'イベント' : '公式会計'}</span>
       </div>
     </div>
   )
@@ -457,7 +469,11 @@ export function UsageCharts({ usage, compact = false }: Props) {
 
   if (compact) {
     if (!daily.length) return null
-    return <UsageMiniBars daily={daily} />
+    return <UsageMiniBars
+      daily={daily}
+      includedUsd={usage.spend.includedUsd}
+      limitUsd={usage.spend.limitUsd}
+    />
   }
 
   const cursorPercent = clampPercent(

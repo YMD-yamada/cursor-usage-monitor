@@ -71,7 +71,7 @@ export default function App() {
     if (usageError) return usageError
     if (metricsError) return metricsError
     if (tasksError) return tasksError
-    if (!usage?.breakdown) return usage?.billing.autoMessage || 'Usageboard'
+    if (!usage?.breakdown) return usage?.billing.autoMessage || 'Usageboard for Cursor'
     const b = usage.breakdown
     const cm = b.cursorModels?.percent ?? b.auto.percent
     const om = b.otherModels?.percent ?? b.named.percent
@@ -118,8 +118,8 @@ export default function App() {
           onLostPointerCapture={() => window.cursorMonitor?.endDrag?.()}
         >
           <span className="brand-mark" aria-hidden="true" />
-          <span className="brand-text">Usageboard</span>
-          <span className="brand-sub">for Cursor</span>
+          <span className="brand-text">Usageboard for Cursor</span>
+          <span className="brand-sub">非公式</span>
         </div>
         <div className="chrome-actions">
           <button
@@ -238,7 +238,11 @@ export default function App() {
       ) : null}
 
       {usage?.charts?.daily?.length ? (
-        <UsageMiniBars daily={usage.charts.daily} />
+        <UsageMiniBars
+          daily={usage.charts.daily}
+          includedUsd={usage.spend.includedUsd}
+          limitUsd={usage.spend.limitUsd}
+        />
       ) : (
         <p className="chart-empty compact-empty">
           {taskSummary === '静か' ? 'Cursor の14日グラフを準備中' : `Agents ${taskSummary}`}

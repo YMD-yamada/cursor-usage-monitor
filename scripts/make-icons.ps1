@@ -9,7 +9,7 @@ New-Item -ItemType Directory -Force -Path $build | Out-Null
 New-Item -ItemType Directory -Force -Path $store | Out-Null
 
 function New-Graphics([int]$w, [int]$h) {
-  $bmp = New-Object System.Drawing.Bitmap $w, $h
+  $bmp = New-Object System.Drawing.Bitmap $w, $h, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
   $g = [System.Drawing.Graphics]::FromImage($bmp)
   $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
   $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::ClearTypeGridFit
@@ -30,33 +30,51 @@ $muted = [System.Drawing.Color]::FromArgb(255, 154, 175, 187)
 $track = [System.Drawing.Color]::FromArgb(255, 48, 58, 70)
 
 $icon = New-Graphics 512 512
-$icon.G.Clear($bg)
-$penTeal = New-Object System.Drawing.Pen $teal, 36
+$icon.G.Clear([System.Drawing.Color]::Transparent)
+$tile = New-Object System.Drawing.Drawing2D.GraphicsPath
+$radius = 96
+$tileRect = New-Object System.Drawing.Rectangle 16, 16, 480, 480
+$d = $radius * 2
+$tile.AddArc($tileRect.X, $tileRect.Y, $d, $d, 180, 90)
+$tile.AddArc($tileRect.Right - $d, $tileRect.Y, $d, $d, 270, 90)
+$tile.AddArc($tileRect.Right - $d, $tileRect.Bottom - $d, $d, $d, 0, 90)
+$tile.AddArc($tileRect.X, $tileRect.Bottom - $d, $d, $d, 90, 90)
+$tile.CloseFigure()
+$icon.G.FillPath((New-Object System.Drawing.SolidBrush $bg), $tile)
+$penTeal = New-Object System.Drawing.Pen $teal, 34
 $penTeal.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
 $penTeal.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
-$penBlue = New-Object System.Drawing.Pen $blue, 36
+$penBlue = New-Object System.Drawing.Pen $blue, 34
 $penBlue.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
 $penBlue.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
-$penTrack = New-Object System.Drawing.Pen $track, 36
-$icon.G.DrawArc($penTrack, 56, 86, 180, 180, 0, 360)
-$icon.G.DrawArc($penTrack, 276, 86, 180, 180, 0, 360)
-$icon.G.DrawArc($penTeal, 56, 86, 180, 180, 220, 230)
-$icon.G.DrawArc($penBlue, 276, 86, 180, 180, 220, 80)
+$penTrack = New-Object System.Drawing.Pen $track, 34
+$icon.G.DrawArc($penTrack, 68, 96, 168, 168, 0, 360)
+$icon.G.DrawArc($penTrack, 276, 96, 168, 168, 0, 360)
+$icon.G.DrawArc($penTeal, 68, 96, 168, 168, 220, 250)
+$icon.G.DrawArc($penBlue, 276, 96, 168, 168, 220, 90)
 $barBrush = New-Object System.Drawing.SolidBrush $teal
-$icon.G.FillRectangle($barBrush, 90, 360, 140, 28)
+$icon.G.FillRectangle($barBrush, 96, 352, 132, 26)
 $barBrush2 = New-Object System.Drawing.SolidBrush $blue
-$icon.G.FillRectangle($barBrush2, 282, 360, 70, 28)
+$icon.G.FillRectangle($barBrush2, 284, 352, 64, 26)
+$ub = New-Object System.Drawing.SolidBrush $ink
+$ff = New-Object System.Drawing.FontFamily 'Segoe UI'
+$fontMark = New-Object System.Drawing.Font $ff, 22, ([System.Drawing.FontStyle]::Bold), ([System.Drawing.GraphicsUnit]::Point)
+$icon.G.DrawString('UB', $fontMark, $ub, 208, 400)
 Save-Png $icon.Bmp (Join-Path $build 'icon.png')
 $icon.G.Dispose(); $icon.Bmp.Dispose()
 
-foreach ($size in 44, 50, 150, 256) {
+foreach ($size in 16, 32, 44, 48, 50, 150, 256) {
   $src = New-Object System.Drawing.Bitmap (Join-Path $build 'icon.png')
   $dst = New-Graphics $size $size
-  $dst.G.Clear($bg)
+  $dst.G.Clear([System.Drawing.Color]::Transparent)
+  $dst.G.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
   $dst.G.DrawImage($src, 0, 0, $size, $size)
   Save-Png $dst.Bmp (Join-Path $build ("icon-{0}.png" -f $size))
   $dst.G.Dispose(); $dst.Bmp.Dispose(); $src.Dispose()
 }
+
+& node (Join-Path $PSScriptRoot 'write-ico.mjs')
+if ($LASTEXITCODE -ne 0) { throw "write-ico.mjs failed" }
 
 $shot = New-Graphics 1366 768
 $shot.G.Clear([System.Drawing.Color]::FromArgb(255, 12, 16, 22))
@@ -97,4 +115,4 @@ $shot.G.DrawString('Not affiliated with Cursor.', $fontSmall, $mutedBrush, 452, 
 Save-Png $shot.Bmp (Join-Path $store 'screenshot-1366x768.png')
 $shot.G.Dispose(); $shot.Bmp.Dispose()
 
-Write-Output 'Wrote build/icon.png and store/screenshot-1366x768.png'
+Write-Output 'Wrote build/icon.png, build/icon.ico, and store/screenshot-1366x768.png'
