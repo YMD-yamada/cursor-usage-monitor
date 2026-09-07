@@ -122,6 +122,25 @@ export type UsageGuide = {
   }>
   faq: Array<{ q: string; a: string }>
   tips: string[]
+  modelAdvice?: {
+    headline: string
+    summary: string
+    defaultPick: { label: string; why: string }
+    whenToSwitch: Array<{ situation: string; pick: string; why: string }>
+    claudeCodeNote: string
+    settings: Array<{ label: string; value: string; note: string }>
+    yourPattern: string | null
+    tips: string[]
+    steps?: Array<{ title: string; items: string[] }>
+  }
+  usageHelp?: {
+    headline: string
+    launch: Array<{ label: string; detail: string; note?: string }>
+    widget: Array<{ action: string; how: string }>
+    tabs: Array<{ id: string; label: string; body: string }>
+    desktopFolder: string
+    troubleshoot: string[]
+  }
   docsUrl: string
   dashboardUrl: string
   spendingUrl?: string
@@ -269,9 +288,18 @@ export type TaskItem = {
   runningForMs?: number
 }
 
+export type SessionSummary = {
+  id: string
+  kind: 'agent' | 'shell'
+  state: TaskState
+  project: string
+  selected: boolean
+  contextPercent: number | null
+}
+
 export type TasksPayload = {
   fetchedAt: string
-  selectedId: string | null
+  selectedId?: string | null
   counts: {
     total: number
     running: number
@@ -281,7 +309,9 @@ export type TasksPayload = {
     done: number
     shell: number
   }
-  tasks: TaskItem[]
+  sessions?: SessionSummary[]
+  /** @deprecated privacy — not sent by API */
+  tasks?: TaskItem[]
 }
 
 export function formatBytes(bytes: number): string {
@@ -336,6 +366,79 @@ export function formatRelative(iso: string | null, now = Date.now()): string {
 export function clampPercent(value: number): number {
   if (!Number.isFinite(value)) return 0
   return Math.max(0, Math.min(value, 100))
+}
+
+export function remainingPercent(used: number): number {
+  return clampPercent(100 - used)
+}
+
+/** e.g. 9/15（火） */
+export function formatResetDate(iso: string | null): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (!Number.isFinite(d.getTime())) return null
+  const md = new Intl.DateTimeFormat('ja-JP', {
+    month: 'numeric',
+    day: 'numeric',
+  }).format(d)
+  const wd = new Intl.DateTimeFormat('ja-JP', { weekday: 'short' }).format(d)
+  return `${md}（${wd}）`
+}
+
+export type CycleBurn = {
+  resetLabel: string | null
+  daysLeft: number | null
+  cursorRemain: number
+  otherRemain: number
+  headline: string
+  pace: string | null
+}
+
+/** How fast to burn remaining included quota before reset (no rollover). */
+export function buildCycleBurn({
+  cycleEnd,
+  daysLeft,
+  cursorPct,
+  otherPct,
+}: {
+  cycleEnd?: string | null
+  daysLeft?: number | null
+  cursorPct: number
+  otherPct: number
+}): CycleBurn {
+  const cursorRemain = remainingPercent(cursorPct)
+  const otherRemain = remainingPercent(otherPct)
+  const resetLabel = formatResetDate(cycleEnd ?? null)
+  let days =
+    daysLeft == null || !Number.isFinite(daysLeft) ? null : Math.max(0, Math.round(daysLeft))
+  if (days == null && cycleEnd) {
+    const ms = new Date(cycleEnd).getTime() - Date.now()
+    if (Number.isFinite(ms)) days = Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)))
+  }
+
+  let headline = 'リセット日はまだ取れていません'
+  if (resetLabel && days == null) headline = `リセット ${resetLabel}`
+  else if (resetLabel && days === 0) headline = `本日リセット ${resetLabel}`
+  else if (resetLabel && days != null) headline = `リセット ${resetLabel} · あと${days}日`
+  else if (days != null) headline = `あと${days}日でリセット`
+
+  let pace: string | null = null
+  const cursorLeft = cursorRemain >= 8
+  const otherLeft = otherRemain >= 8
+  if (!cursorLeft && !otherLeft) {
+    pace = 'ほぼ使い切り'
+  } else if (days === 0) {
+    pace = '未使用分は繰り越しなし'
+  } else if (days != null && days > 0) {
+    const bits: string[] = []
+    if (cursorLeft) bits.push(`Cursor 約${Math.max(1, Math.ceil(cursorRemain / days))}%`)
+    if (otherLeft) bits.push(`その他 約${Math.max(1, Math.ceil(otherRemain / days))}%`)
+    pace = `1日 ${bits.join(' · ')} で使い切り · 繰越なし`
+  } else {
+    pace = '未使用分は繰り越しなし'
+  }
+
+  return { resetLabel, daysLeft: days, cursorRemain, otherRemain, headline, pace }
 }
 
 export function taskStateLabel(state: TaskState): string {

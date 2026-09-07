@@ -21,8 +21,7 @@ const APP_ID = 'jp.ymd.usageboard'
 app.setName('Usageboard for Cursor')
 app.setAppUserModelId(APP_ID)
 
-const COMPACT = { width: 320, height: 348 }
-const EXPANDED = { width: 400, height: 780 }
+const WINDOW_SIZE = { width: 400, height: 680 }
 
 const EXTERNAL_ALLOW = [
   /^https:\/\/([\w-]+\.)?cursor\.com(\/|$)/i,
@@ -33,7 +32,6 @@ const EXTERNAL_ALLOW = [
 let serverProcess = null
 let mainWindow = null
 let tray = null
-let expanded = false
 let bootUrl = null
 let dragTimer = null
 let dragOffset = null
@@ -49,7 +47,7 @@ function stopDrag() {
 }
 
 function currentSize() {
-  return expanded ? EXPANDED : COMPACT
+  return WINDOW_SIZE
 }
 
 function isAllowedExternal(url) {
@@ -77,7 +75,6 @@ function writeWindowState(bounds) {
         {
           x: bounds.x,
           y: bounds.y,
-          expanded,
         },
         null,
         2,
@@ -95,12 +92,46 @@ function lockSize(win, size) {
   win.setMaximumSize(size.width, size.height)
 }
 
+function clampToWorkArea(bounds, size) {
+  const point = {
+    x: Number.isFinite(bounds?.x) ? bounds.x : 0,
+    y: Number.isFinite(bounds?.y) ? bounds.y : 0,
+  }
+  const display = screen.getDisplayNearestPoint(point)
+  const work = display.workArea
+  const width = size.width
+  const height = size.height
+  const maxX = work.x + Math.max(work.width - width - 8, 8)
+  const maxY = work.y + Math.max(work.height - height - 8, 8)
+  const x = Math.min(Math.max(work.x + 8, Math.round(point.x)), maxX)
+  const y = Math.min(Math.max(work.y + 8, Math.round(point.y)), maxY)
+  return { x, y, width, height }
+}
+
+function ensureVisible() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    if (bootUrl) createWindow(bootUrl)
+    return
+  }
+  const size = currentSize()
+  lockSize(mainWindow, size)
+  const next = clampToWorkArea(mainWindow.getBounds(), size)
+  mainWindow.setBounds(next)
+  writeWindowState(next)
+  mainWindow.setSkipTaskbar(false)
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  if (!mainWindow.isVisible()) mainWindow.show()
+  mainWindow.setAlwaysOnTop(true, 'screen-saver')
+  mainWindow.moveTop()
+  mainWindow.focus()
+}
+
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) {
   app.quit()
 } else {
   app.on('second-instance', () => {
-    showWidget()
+    ensureVisible()
   })
 }
 
@@ -194,27 +225,6 @@ function placeOnRightEdge(win, size) {
   win.setBounds({ x, y, width: size.width, height: size.height })
 }
 
-function applySize(nextExpanded) {
-  expanded = nextExpanded
-  const size = currentSize()
-  if (!mainWindow || mainWindow.isDestroyed()) return
-  lockSize(mainWindow, size)
-  const bounds = mainWindow.getBounds()
-  const display = screen.getDisplayMatching(bounds)
-  const work = display.workArea
-  const x = Math.min(bounds.x, work.x + work.width - size.width - 8)
-  const y = Math.min(bounds.y, work.y + work.height - size.height - 8)
-  const next = {
-    x: Math.max(work.x + 8, Math.round(x)),
-    y: Math.max(work.y + 8, Math.round(y)),
-    width: size.width,
-    height: size.height,
-  }
-  mainWindow.setBounds(next)
-  writeWindowState(next)
-  mainWindow.webContents.send('widget:expanded', expanded)
-}
-
 function minimizeWidget() {
   if (!mainWindow) return
   // Ensure it can appear on the taskbar when minimized.
@@ -224,14 +234,7 @@ function minimizeWidget() {
 }
 
 function showWidget() {
-  if (!mainWindow) {
-    if (bootUrl) createWindow(bootUrl)
-    return
-  }
-  if (mainWindow.isMinimized()) mainWindow.restore()
-  if (!mainWindow.isVisible()) mainWindow.show()
-  mainWindow.setSkipTaskbar(false)
-  mainWindow.focus()
+  ensureVisible()
 }
 
 function hideWidget() {
@@ -393,10 +396,6 @@ function rebuildTrayMenu() {
         writeWindowState(mainWindow.getBounds())
       },
     },
-    {
-      label: '詳細を開く / 閉じる',
-      click: () => applySize(!expanded),
-    },
     { type: 'separator' },
     {
       label: 'ログイン時に起動',
@@ -422,6 +421,7 @@ function rebuildTrayMenu() {
 }
 
 function createWindow(url) {
+  const saved = readWindowState()
   const size = currentSize()
   const appIcon = createAppIcon()
   mainWindow = new BrowserWindow({
@@ -453,39 +453,47 @@ function createWindow(url) {
   })
 
   lockSize(mainWindow, size)
-  const saved = readWindowState()
-  const display = saved
-    ? screen.getDisplayNearestPoint({ x: saved.x || 0, y: saved.y || 0 })
+  const savedPos = saved && Number.isFinite(saved.x) && Number.isFinite(saved.y) ? saved : null
+  const display = savedPos
+    ? screen.getDisplayNearestPoint({ x: savedPos.x, y: savedPos.y })
     : screen.getPrimaryDisplay()
   const work = display.workArea
-  if (
-    saved &&
-    Number.isFinite(saved.x) &&
-    Number.isFinite(saved.y) &&
-    saved.x >= work.x - 40 &&
-    saved.y >= work.y - 40 &&
-    saved.x < work.x + work.width &&
-    saved.y < work.y + work.height
-  ) {
-    mainWindow.setBounds({
-      x: Math.round(saved.x),
-      y: Math.round(saved.y),
-      width: size.width,
-      height: size.height,
-    })
+  const onScreen =
+    savedPos &&
+    savedPos.x >= work.x - 40 &&
+    savedPos.y >= work.y - 40 &&
+    savedPos.x + size.width <= work.x + work.width + 40 &&
+    savedPos.y + size.height <= work.y + work.height + 40
+  if (onScreen) {
+    mainWindow.setBounds(clampToWorkArea(savedPos, size))
   } else {
     placeOnRightEdge(mainWindow, size)
+    mainWindow.setBounds(clampToWorkArea(mainWindow.getBounds(), size))
   }
 
-  mainWindow.setAlwaysOnTop(true, 'floating')
+  mainWindow.setAlwaysOnTop(true, 'screen-saver')
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
   mainWindow.setMovable(true)
   mainWindow.setMenu(null)
 
-  mainWindow.loadURL(url)
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show()
+  let revealed = false
+  const reveal = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    revealed = true
+    ensureVisible()
+  }
+  mainWindow.once('ready-to-show', reveal)
+  mainWindow.webContents.once('did-finish-load', () => {
+    setTimeout(reveal, 50)
   })
+  mainWindow.webContents.once('did-fail-load', () => {
+    setTimeout(reveal, 50)
+  })
+  setTimeout(() => {
+    if (!revealed) reveal()
+  }, 2000)
+
+  mainWindow.loadURL(url)
 
   mainWindow.webContents.setWindowOpenHandler(({ url: target }) => {
     if (isAllowedExternal(target)) shell.openExternal(target)
@@ -496,6 +504,11 @@ function createWindow(url) {
       target.startsWith(`http://127.0.0.1:${PORT}`) ||
       target.startsWith('http://127.0.0.1:5173/')
     if (!local) event.preventDefault()
+  })
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.error('renderer gone', details.reason)
+    if (!mainWindow || mainWindow.isDestroyed() || app.isQuitting) return
+    mainWindow.loadURL(url).finally(() => ensureVisible())
   })
   mainWindow.on('blur', () => {
     stopDrag()
@@ -519,30 +532,34 @@ function createTray() {
   tray.setToolTip('Usageboard for Cursor（常駐中）')
   rebuildTrayMenu()
   tray.on('click', () => {
-    if (!mainWindow) {
+    if (!mainWindow || mainWindow.isDestroyed() || mainWindow.isMinimized()) {
       showWidget()
       return
     }
-    if (mainWindow.isVisible()) hideWidget()
-    else showWidget()
+    if (!mainWindow.isVisible()) {
+      showWidget()
+      return
+    }
+    const b = mainWindow.getBounds()
+    const work = screen.getDisplayMatching(b).workArea
+    const off =
+      b.x + 40 > work.x + work.width ||
+      b.y + 40 > work.y + work.height ||
+      b.x + b.width < work.x + 40 ||
+      b.y + b.height < work.y + 40
+    if (off) showWidget()
+    else hideWidget()
   })
 }
 
 function registerIpc() {
 
   ipcMain.handle('widget:getState', () => ({
-    expanded,
     autostart: getAutostartEnabled(),
     resident: true,
   }))
-  ipcMain.handle('widget:setExpanded', (_event, value) => {
-    applySize(Boolean(value))
-    return { expanded }
-  })
-  ipcMain.handle('widget:toggleExpanded', () => {
-    applySize(!expanded)
-    return { expanded }
-  })
+  ipcMain.handle('widget:setExpanded', () => ({ expanded: true }))
+  ipcMain.handle('widget:toggleExpanded', () => ({ expanded: true }))
   ipcMain.handle('widget:snapRight', () => {
     if (mainWindow) {
       placeOnRightEdge(mainWindow, currentSize())
@@ -552,6 +569,10 @@ function registerIpc() {
   })
   ipcMain.handle('widget:hide', () => {
     hideWidget()
+    return true
+  })
+  ipcMain.handle('widget:show', () => {
+    ensureVisible()
     return true
   })
   ipcMain.handle('widget:minimize', () => {

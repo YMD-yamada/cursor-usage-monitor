@@ -12,7 +12,7 @@ This app runs **on your PC** and reads your local Cursor login session to call C
 - Access tokens are never written to disk by this app and are not returned by the HTTP API
 - Email / user id are redacted from API JSON responses
 - Usage / account errors do not echo Cursor API bodies
-- `/api/tasks` returns counts only (no chat titles, workspace paths, or shell commands)
+- `/api/tasks` returns counts plus redacted session rows (project label + state only; no chat titles, workspace paths, or shell commands)
 - `/api/metrics` returns aggregates only (no process path / PID lists)
 - Renderer cannot open arbitrary URLs (allowlisted Cursor / GitHub / legal hub only)
 - No third-party telemetry, ads, or remote logging

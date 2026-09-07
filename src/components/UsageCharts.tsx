@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { DailyUsagePoint, ModelUsage, UsagePayload } from '../lib/format'
-import { clampPercent, formatTokens, formatUsd } from '../lib/format'
-import { UsageBuckets } from './UsageBuckets'
+import { formatTokens, formatUsd } from '../lib/format'
 
 type Props = {
   usage: UsagePayload | null
@@ -76,15 +75,11 @@ function buildDailyGeometry(
   return { points, costLine, costArea, eventsLine, maxCost, maxEvents, pad, baseline }
 }
 
-/** Compact cost area chart — official included $ plus 14-day event trend. */
+/** Compact 14-day cost trend. */
 export function UsageMiniBars({
   daily,
-  includedUsd,
-  limitUsd,
 }: {
   daily: DailyUsagePoint[]
-  includedUsd?: number
-  limitUsd?: number
 }) {
   const [hover, setHover] = useState<number | null>(null)
   const width = 280
@@ -98,16 +93,13 @@ export function UsageMiniBars({
 
   const eventTotal = daily.reduce((sum, d) => sum + d.costUsd, 0)
   const active = hover != null ? daily[hover] : null
-  const official =
-    includedUsd != null && limitUsd
-      ? `Included ${formatUsd(includedUsd)} / ${formatUsd(limitUsd)}`
-      : `イベント ${formatUsd(eventTotal)}`
+  const summary = `14日 ${formatUsd(eventTotal)}`
 
   return (
     <div
       className="mini-bars"
       role="img"
-      aria-label={`公式 Included ${official}`}
+      aria-label={`14日のコスト ${summary}`}
     >
       <svg
         className="mini-area-svg"
@@ -155,9 +147,9 @@ export function UsageMiniBars({
         <span>
           {active
             ? `${dayLabel(active.date)} · ${formatUsd(active.costUsd)} · ${active.events}件`
-            : official}
+            : summary}
         </span>
-        <span>{active ? 'イベント' : '公式会計'}</span>
+        <span>{active ? 'イベント' : '推移'}</span>
       </div>
     </div>
   )
@@ -168,39 +160,10 @@ export function UsageSparkline({ daily }: { daily: DailyUsagePoint[] }) {
   return <UsageMiniBars daily={daily} />
 }
 
-function UsageRing({ percent }: { percent: number }) {
-  const pct = clampPercent(percent)
-  const r = 28
-  const c = 2 * Math.PI * r
-  const offset = c * (1 - pct / 100)
-  const tone = pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : 'ok'
-
-  return (
-    <div className={`usage-ring tone-${tone}`} aria-label={`Usage ${pct.toFixed(0)}%`}>
-      <svg viewBox="0 0 72 72" width="72" height="72">
-        <circle className="ring-track" cx="36" cy="36" r={r} />
-        <circle
-          className="ring-fill"
-          cx="36"
-          cy="36"
-          r={r}
-          strokeDasharray={c}
-          strokeDashoffset={offset}
-          transform="rotate(-90 36 36)"
-        />
-      </svg>
-      <div className="ring-label">
-        <span className="ring-num">{pct.toFixed(0)}</span>
-        <span className="ring-unit">%</span>
-      </div>
-    </div>
-  )
-}
-
 function DailyTrendChart({ daily }: { daily: DailyUsagePoint[] }) {
   const [hover, setHover] = useState<number | null>(null)
-  const width = 320
-  const height = 120
+  const width = 360
+  const height = 160
   const geo = useMemo(
     () =>
       buildDailyGeometry(daily, width, height, {
@@ -469,53 +432,13 @@ export function UsageCharts({ usage, compact = false }: Props) {
 
   if (compact) {
     if (!daily.length) return null
-    return <UsageMiniBars
-      daily={daily}
-      includedUsd={usage.spend.includedUsd}
-      limitUsd={usage.spend.limitUsd}
-    />
+    return (
+      <UsageMiniBars daily={daily} />
+    )
   }
-
-  const cursorPercent = clampPercent(
-    usage.breakdown?.cursorModels?.percent ??
-      usage.breakdown?.auto?.percent ??
-      usage.spend.autoPercentUsed ??
-      0,
-  )
-  const otherPercent = clampPercent(
-    usage.breakdown?.otherModels?.percent ??
-      usage.breakdown?.named?.percent ??
-      usage.spend.apiPercentUsed ??
-      0,
-  )
-  const ringPercent = Math.max(cursorPercent, otherPercent)
 
   return (
     <div className="usage-charts">
-      <div className="usage-overview">
-        <UsageRing percent={ringPercent} />
-        <div className="usage-overview-copy">
-          <p className="hero-label">公式プール</p>
-          <p className="overview-spend mono">
-            CM {cursorPercent.toFixed(0)}% · OM {otherPercent.toFixed(0)}%
-          </p>
-          <p className="overview-meta mono">
-            従量 {usage.breakdown?.onDemand.allowed ? 'ON' : 'OFF'}
-            {usage.spend.bonusUsd > 0
-              ? ` · ボーナス会計 ${formatUsd(usage.spend.bonusUsd)}`
-              : ''}
-          </p>
-          {usage.charts?.eventsTotal != null && (
-            <p className="overview-meta mono">
-              Events {usage.charts.eventsSampled}
-              {usage.charts.eventsTotal > usage.charts.eventsSampled
-                ? ` / ${usage.charts.eventsTotal}`
-                : ''}
-            </p>
-          )}
-        </div>
-      </div>
-      <UsageBuckets usage={usage} />
       {daily.length > 0 && <DailyTrendChart daily={daily} />}
       <ModelShare models={usage.models} />
       <TokenMix usage={usage} />

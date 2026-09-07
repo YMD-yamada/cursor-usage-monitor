@@ -156,15 +156,23 @@ async function probe(port) {
   )
 
   const tasks = await getJson(`${base}/api/tasks`)
+  const sess = tasks.json?.sessions
+  const sessOk =
+    !sess?.length ||
+    (typeof sess[0].project === 'string' &&
+      !sess[0].title &&
+      !sess[0].workspace)
   const tasksOk =
     tasks.status === 200 &&
     typeof tasks.json?.counts?.running === 'number' &&
+    Array.isArray(sess) &&
+    sessOk &&
     !Array.isArray(tasks.json?.tasks)
   record(
     'GET /api/tasks',
     tasksOk,
     tasks.status === 200
-      ? `running=${tasks.json.counts.running} noTitles=${!tasks.json.tasks}`
+      ? `running=${tasks.json.counts.running} sessions=${sess?.length ?? 0}`
       : `status=${tasks.status} ${tasks.json?.error || ''}`,
   )
 
@@ -231,6 +239,13 @@ async function checkResidentHealth() {
 async function main() {
   const started = Date.now()
   log(`root=${root}`)
+
+  try {
+    await run('npm', ['run', 'typecheck'])
+    record('typecheck', true, 'tsc --noEmit')
+  } catch (err) {
+    record('typecheck', false, err.message)
+  }
 
   if (!skipBuild && !fs.existsSync(distIndex)) {
     log('dist missing — building…')

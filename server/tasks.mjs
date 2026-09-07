@@ -386,20 +386,29 @@ export function getTaskOverview() {
       return (b.updatedAt || 0) - (a.updatedAt || 0)
     })
 
-  const tasks = merged.slice(0, RECENT_LIMIT)
+  const sessions = merged.slice(0, RECENT_LIMIT).map((t) => ({
+    id: t.id,
+    kind: t.kind,
+    state: t.state,
+    project: t.project || '—',
+    selected: Boolean(t.selected),
+    contextPercent:
+      typeof t.contextPercent === 'number' ? t.contextPercent : null,
+  }))
 
   const counts = {
-    total: tasks.length,
-    running: tasks.filter((t) => t.state === 'running').length,
-    waiting: tasks.filter((t) => t.state === 'waiting').length,
-    unread: tasks.filter((t) => t.state === 'unread').length,
-    open: tasks.filter((t) => t.state === 'open').length,
-    done: tasks.filter((t) => t.state === 'done').length,
-    shell: tasks.filter((t) => t.kind === 'shell').length,
+    total: sessions.length,
+    running: sessions.filter((t) => t.state === 'running').length,
+    waiting: sessions.filter((t) => t.state === 'waiting').length,
+    unread: sessions.filter((t) => t.state === 'unread').length,
+    open: sessions.filter((t) => t.state === 'open').length,
+    done: sessions.filter((t) => t.state === 'done').length,
+    shell: sessions.filter((t) => t.kind === 'shell').length,
   }
 
   return {
     fetchedAt: new Date().toISOString(),
     counts,
+    sessions,
   }
 }

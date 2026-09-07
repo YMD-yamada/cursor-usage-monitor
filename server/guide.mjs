@@ -1,3 +1,6 @@
+import { buildModelAdvice } from './modelAdvice.mjs'
+import { buildUsageHelp } from './helpGuide.mjs'
+
 function planLabel(membershipType) {
   const key = String(membershipType || '').toLowerCase()
   if (key === 'pro') return 'Pro（$20/月）'
@@ -332,6 +335,15 @@ export function buildBillingGuide({
     )
   }
 
+  const modelAdvice = buildModelAdvice({
+    account,
+    breakdown,
+    models,
+    autoBucketModels,
+  })
+
+  const usageHelp = buildUsageHelp()
+
   return {
     current,
     layers,
@@ -342,6 +354,8 @@ export function buildBillingGuide({
     plans,
     stayOnPro,
     modelStates,
+    modelAdvice,
+    usageHelp,
     faq,
     tips,
     docsUrl: 'https://cursor.com/docs/models-and-pricing',

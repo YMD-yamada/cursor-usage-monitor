@@ -177,7 +177,12 @@ Set-ItemProperty -Path $uninst -Name "DisplayName" -Value $displayName
 Set-ItemProperty -Path $uninst -Name "DisplayIcon" -Value $(if (Test-Path $ico) { $ico } else { $electron })
 Set-ItemProperty -Path $uninst -Name "InstallLocation" -Value $installDir
 Set-ItemProperty -Path $uninst -Name "Publisher" -Value "ymd"
-Set-ItemProperty -Path $uninst -Name "DisplayVersion" -Value "1.2.1"
+$pkgJson = Join-Path $RepoRoot "package.json"
+$displayVersion = "1.3.0"
+if (Test-Path -LiteralPath $pkgJson) {
+  $displayVersion = (Get-Content -LiteralPath $pkgJson -Raw | ConvertFrom-Json).version
+}
+Set-ItemProperty -Path $uninst -Name "DisplayVersion" -Value $displayVersion
 $unreg = Join-Path $RepoRoot "scripts\unregister-windows-app.ps1"
 Set-ItemProperty -Path $uninst -Name "UninstallString" -Value ("powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$unreg`"")
 Set-ItemProperty -Path $uninst -Name "NoModify" -Value 1 -Type DWord

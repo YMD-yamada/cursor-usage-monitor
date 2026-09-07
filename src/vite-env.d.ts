@@ -5,7 +5,7 @@ interface Window {
     platform: string
     isElectron: boolean
     getState: () => Promise<{
-      expanded: boolean
+      expanded?: boolean
       autostart?: boolean
       resident?: boolean
     }>
@@ -13,6 +13,7 @@ interface Window {
     toggleExpanded: () => Promise<{ expanded: boolean }>
     snapRight: () => Promise<boolean>
     hide: () => Promise<boolean>
+    show: () => Promise<boolean>
     minimize: () => Promise<boolean>
     quit: () => Promise<boolean>
     setAutostart?: (enabled: boolean) => Promise<{ autostart: boolean }>

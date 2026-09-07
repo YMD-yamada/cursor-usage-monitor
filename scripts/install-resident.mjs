@@ -47,6 +47,18 @@ fs.writeFileSync(
 
 console.log('Installed Usageboard for Cursor (Start Menu / Search / Startup).')
 
+const hubInstall = path.join(
+  process.env.USERPROFILE || '',
+  'Projects',
+  'work-ops-hub',
+  'scripts',
+  'Install-AppShortcuts.ps1',
+)
+if (fs.existsSync(hubInstall)) {
+  await run(hubInstall, [])
+  console.log('Refreshed Desktop 自作アプリ shortcuts.')
+}
+
 await new Promise((resolve, reject) => {
   const child = spawn('node', [path.join(root, 'scripts', 'launch-resident.mjs')], {
     cwd: root,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { UsagePayload } from '../lib/format'
+import type { UsageGuide, UsagePayload } from '../lib/format'
 import { CURSOR_LINKS, openCursorLink } from '../lib/cursorLinks'
 import {
   DEFAULT_OPS_PREFS,
@@ -10,6 +10,7 @@ import {
 
 type Props = {
   usage: UsagePayload
+  help?: UsageGuide['usageHelp']
 }
 
 type Action = {
@@ -48,7 +49,7 @@ function LinkBtn({
  * 2) mirror live on-demand status from Cursor
  * 3) deep-link to official dashboard pages to change settings
  */
-export function OpsPanel({ usage }: Props) {
+export function OpsPanel({ usage, help }: Props) {
   const [prefs, setPrefs] = useState<OpsPrefs>(DEFAULT_OPS_PREFS)
 
   useEffect(() => {
@@ -124,7 +125,7 @@ export function OpsPanel({ usage }: Props) {
         id: 'stretch-plan',
         title: '基本プランを使い切るコツ',
         detail:
-          '普段は Auto / Composer / Cursor Grok（Cursor Models）。Claude / GPT は必要なときだけ指名。',
+          'Auto / Composer 主戦。Claude は必要時のみ（モデルタブ参照）。',
         href: CURSOR_LINKS.usageLimitsHelp,
         tone: 'neutral',
         cta: '利用枠の説明',
@@ -152,12 +153,8 @@ export function OpsPanel({ usage }: Props) {
 
   return (
     <div className="ops-panel">
-      <p className="guide-intro">
-        Cursor の従量ON/OFFやプラン変更は公式サイト側の設定です。このアプリは方針を覚え、状態を監視し、必要なページへ案内します（どの Cursor ユーザーでも同じ流れ）。
-      </p>
-
       <div className="ops-prefs">
-        <p className="pool-title">運用方針（この端末に保存）</p>
+        <p className="pool-title">方針（この端末）</p>
         <label className="ops-check">
           <input
             type="checkbox"
@@ -194,7 +191,7 @@ export function OpsPanel({ usage }: Props) {
       </div>
 
       <div className="ops-live">
-        <p className="pool-title">いまの Cursor 側の状態</p>
+        <p className="pool-title">Cursor 側</p>
         <div className="ops-live-grid">
           <div>
             <span className="ops-live-label">プラン</span>
@@ -232,17 +229,23 @@ export function OpsPanel({ usage }: Props) {
       </ul>
 
       <div className="ops-quick-links">
-        <LinkBtn href={CURSOR_LINKS.spending}>従量のON/OFF</LinkBtn>
-        <LinkBtn href={CURSOR_LINKS.billing}>プラン変更</LinkBtn>
+        <LinkBtn href={CURSOR_LINKS.spending}>従量</LinkBtn>
+        <LinkBtn href={CURSOR_LINKS.billing}>プラン</LinkBtn>
         <LinkBtn href={CURSOR_LINKS.usage}>Usage</LinkBtn>
-        <LinkBtn href={CURSOR_LINKS.pricing}>料金表</LinkBtn>
       </div>
 
-      <p className="ops-footnote">
-        アプリから従量やプランを直接書き換えはできません（Cursor
-        公式の公開APIがないため）。ボタンは公式 Dashboard / Pricing
-        をブラウザで開きます。
-      </p>
+      {help && (
+        <details className="ops-help">
+          <summary>起動・ショートカット</summary>
+          <ul className="guide-notices">
+            {help.launch.map((row) => (
+              <li key={row.label}>
+                <strong>{row.label}</strong> — {row.detail}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
     </div>
   )
 }

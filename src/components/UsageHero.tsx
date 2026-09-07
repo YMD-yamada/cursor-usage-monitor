@@ -1,4 +1,5 @@
 import { clampPercent } from '../lib/format'
+import { heroMetaLine } from './UsageAlert'
 
 type Tone = 'ok' | 'warn' | 'danger'
 
@@ -43,7 +44,9 @@ function PoolMark({
           <span className="pool-mark-unit">%</span>
         </div>
       </div>
-      <span className="pool-mark-label">{label}</span>
+      <span className="pool-mark-label" title={label === 'CM' ? 'Cursor Models' : label === 'OM' ? 'Other Models' : label}>
+        {label}
+      </span>
     </div>
   )
 }
@@ -57,7 +60,6 @@ type Props = {
   loading?: boolean
   signedIn?: boolean
   planLabel?: string
-  cycleDaysLeft?: number | null
   onToggle?: () => void
 }
 
@@ -71,28 +73,25 @@ export function DualPoolHero({
   loading,
   signedIn = true,
   planLabel,
-  cycleDaysLeft,
   onToggle,
 }: Props) {
-  const meta = (() => {
-    if (loading) return 'Cursor の Usage を読み込み中…'
-    if (!signedIn) return 'Cursor にサインインすると2プールが出ます'
-    const plan = planLabel ? planLabel : 'Cursor'
-    const cycle =
-      cycleDaysLeft != null ? ` · 更新まで${cycleDaysLeft}日` : ''
-    return `${plan} · 従量 ${onDemandAllowed ? 'ON' : 'OFF'}${cycle}`
-  })()
+  const meta = heroMetaLine({
+    loading,
+    signedIn,
+    planLabel,
+    onDemandAllowed,
+  })
 
   return (
     <button type="button" className="pool-hero" onClick={() => onToggle?.()}>
       <div className="pool-hero-grid">
         <PoolMark
-          label="Cursor Models"
+          label="CM"
           percent={loading || !signedIn ? 0 : cursorPct}
           exhausted={cursorExhausted}
         />
         <PoolMark
-          label="Other Models"
+          label="OM"
           percent={loading || !signedIn ? 0 : otherPct}
           exhausted={otherExhausted}
         />

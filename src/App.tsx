@@ -1,13 +1,16 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useMonitorData } from './hooks/useMonitorData'
-import { UsageCharts, UsageMiniBars } from './components/UsageCharts'
-import { BillingGuide, GuideChip } from './components/BillingGuide'
-import { DualPoolHero } from './components/UsageHero'
-import { CURSOR_LINKS, openCursorLink } from './lib/cursorLinks'
+import { ExpandedDashboard } from './components/dashboard/ExpandedDashboard'
+import { ViewMenu } from './components/dashboard/ViewMenu'
+import { clampPercent } from './lib/format'
 import {
-  clampPercent,
-  formatBytes,
-} from './lib/format'
+  DEFAULT_VIEW_PREFS,
+  loadViewPrefs,
+  saveViewPrefs,
+  type DetailId,
+  type ViewPrefs,
+  type ViewWidget,
+} from './lib/viewPrefs'
 
 function ChromeGlyph({
   children,
@@ -36,18 +39,34 @@ export default function App() {
     refreshUsage,
     refreshingUsage,
   } = useMonitorData()
-  const [expanded, setExpanded] = useState(false)
   const [autostart, setAutostart] = useState(true)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [detail, setDetail] = useState<DetailId | null>(null)
+  const [viewPrefs, setViewPrefs] = useState<ViewPrefs>(() => loadViewPrefs())
   const isElectron = Boolean(window.cursorMonitor?.isElectron)
 
   useEffect(() => {
     if (!window.cursorMonitor) return
     void window.cursorMonitor.getState().then((s) => {
-      setExpanded(s.expanded)
       if (typeof s.autostart === 'boolean') setAutostart(s.autostart)
     })
-    return window.cursorMonitor.onExpanded(setExpanded)
   }, [])
+
+  useEffect(() => {
+    if (!detail) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setDetail(null)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [detail])
+
+  const closeMenu = useCallback(() => setMenuOpen(false), [])
+
+  function persistPrefs(next: ViewPrefs) {
+    setViewPrefs(next)
+    saveViewPrefs(next)
+  }
 
   const cursorPct = clampPercent(
     usage?.breakdown?.cursorModels?.percent ??
@@ -63,49 +82,36 @@ export default function App() {
   )
   const sysMem = clampPercent(metrics?.memory.usedPercent ?? 0)
   const cursorMemPct = clampPercent(metrics?.cursor.memPercent ?? 0)
-  const otherMemPct = clampPercent(Math.max(sysMem - cursorMemPct, 0))
-  const freeMemPct = clampPercent(100 - sysMem)
-  const counts = tasks?.counts
+  const sysCpu = clampPercent(metrics?.cpu.loadPercent ?? 0)
+  const cursorCpuRaw = metrics?.cursor.totalCpuPercent ?? 0
+  const signedIn =
+    account?.signedIn !== false && !/サインイン/i.test(usageError || '')
 
-  const statusLine = useMemo(() => {
+  const errorLine = useMemo(() => {
     if (usageError) return usageError
     if (metricsError) return metricsError
     if (tasksError) return tasksError
-    if (!usage?.breakdown) return usage?.billing.autoMessage || 'Usageboard for Cursor'
-    const b = usage.breakdown
-    const cm = b.cursorModels?.percent ?? b.auto.percent
-    const om = b.otherModels?.percent ?? b.named.percent
-    return `Cursor Models ${cm.toFixed(0)}% · Other Models ${om.toFixed(0)}% · 従量 ${b.onDemand.status}`
-  }, [usage, usageError, metricsError, tasksError])
-  const taskSummary = useMemo(() => {
-    if (!counts) return '…'
-    const parts = []
-    if (counts.running) parts.push(`実行${counts.running}`)
-    if (counts.waiting) parts.push(`待機${counts.waiting}`)
-    if (counts.unread) parts.push(`未読${counts.unread}`)
-    if (!parts.length) return '静か'
-    return parts.join(' ')
-  }, [counts])
+    return null
+  }, [usageError, metricsError, tasksError])
 
-  const ramTitle = metrics
-    ? `RAM ${sysMem.toFixed(0)}% · Cursor ${cursorMemPct.toFixed(0)}% · 他 ${otherMemPct.toFixed(0)}% · 空き ${freeMemPct.toFixed(0)}%`
-    : 'RAM …'
+  function openDetail(id: DetailId) {
+    setMenuOpen(false)
+    setDetail(id)
+  }
 
-  async function toggle() {
-    if (window.cursorMonitor) {
-      const next = await window.cursorMonitor.toggleExpanded()
-      setExpanded(next.expanded)
-      return
-    }
-    setExpanded((v) => !v)
+  function toggleWidget(id: ViewWidget) {
+    persistPrefs({
+      ...viewPrefs,
+      widgets: { ...viewPrefs.widgets, [id]: !viewPrefs.widgets[id] },
+    })
   }
 
   return (
-    <div className={`widget ${expanded ? 'is-expanded' : 'is-compact'}`}>
+    <div className="widget is-expanded">
       <header className="widget-chrome">
         <div
           className="drag-handle"
-          title="ここをドラッグして移動"
+          title="ドラッグで移動"
           onPointerDown={(e) => {
             if (!window.cursorMonitor?.startDrag) return
             if (e.button !== 0) return
@@ -118,47 +124,32 @@ export default function App() {
           onLostPointerCapture={() => window.cursorMonitor?.endDrag?.()}
         >
           <span className="brand-mark" aria-hidden="true" />
-          <span className="brand-text">Usageboard for Cursor</span>
-          <span className="brand-sub">非公式</span>
+          <span className="brand-text">Usageboard</span>
         </div>
         <div className="chrome-actions">
-          <button
-            type="button"
-            className="icon-btn"
-            title={expanded ? 'コンパクト表示' : '詳細を開く'}
-            onClick={() => void toggle()}
-          >
-            <ChromeGlyph title={expanded ? 'コンパクト' : '詳細'}>
-              {expanded ? (
-                <path
-                  d="M4 10.5L8 6.5L12 10.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              ) : (
-                <path
-                  d="M4 6.5L8 10.5L12 6.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              )}
-            </ChromeGlyph>
-          </button>
+          <ViewMenu
+            open={menuOpen}
+            prefs={viewPrefs}
+            onToggleOpen={() => setMenuOpen((v) => !v)}
+            onClose={closeMenu}
+            onToggleWidget={toggleWidget}
+            onOpenDetail={openDetail}
+            onReset={() => {
+              persistPrefs({
+                widgets: { ...DEFAULT_VIEW_PREFS.widgets },
+              })
+              closeMenu()
+            }}
+          />
           {isElectron && (
             <>
               <button
                 type="button"
                 className="icon-btn"
-                title="右端にスナップ"
+                title="右端へ"
                 onClick={() => void window.cursorMonitor?.snapRight()}
               >
-                <ChromeGlyph title="右端にスナップ">
+                <ChromeGlyph title="右端へ">
                   <rect
                     x="3"
                     y="3.5"
@@ -174,22 +165,6 @@ export default function App() {
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="1.4"
-                  />
-                </ChromeGlyph>
-              </button>
-              <button
-                type="button"
-                className="icon-btn"
-                title="最小化（タスクバー）"
-                onClick={() => void window.cursorMonitor?.minimize?.()}
-              >
-                <ChromeGlyph title="最小化">
-                  <path
-                    d="M3.5 12.5H12.5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
                   />
                 </ChromeGlyph>
               </button>
@@ -214,149 +189,41 @@ export default function App() {
         </div>
       </header>
 
-      <DualPoolHero
+      {errorLine && <p className="usage-alert danger">{errorLine}</p>}
+
+      <ExpandedDashboard
+        usage={usage}
+        metrics={metrics}
+        tasks={tasks}
         cursorPct={cursorPct}
         otherPct={otherPct}
-        cursorExhausted={Boolean(usage?.breakdown?.cursorModels?.exhausted)}
-        otherExhausted={Boolean(usage?.breakdown?.otherModels?.exhausted)}
-        onDemandAllowed={usage?.breakdown?.onDemand.allowed}
-        loading={!usage && !usageError}
-        signedIn={account?.signedIn !== false && !/サインイン/i.test(usageError || '')}
-        planLabel={
-          usage?.guide?.current.plan ||
-          account?.membershipType ||
-          undefined
-        }
+        sysMem={sysMem}
+        cursorMemPct={cursorMemPct}
+        sysCpu={sysCpu}
+        cursorCpuRaw={cursorCpuRaw}
+        signedIn={signedIn}
+        loadingUsage={!usage && !usageError}
+        planLabel={usage?.guide?.current.plan || account?.membershipType || undefined}
         cycleDaysLeft={usage?.guide?.current.cycleDaysLeft}
-        onToggle={() => void toggle()}
+        cycleEnd={usage?.guide?.current.cycleEnd || usage?.billing?.cycleEnd}
+        onDemandAllowed={usage?.breakdown?.onDemand.allowed}
+        prefs={viewPrefs}
+        detail={detail}
+        onCloseDetail={() => setDetail(null)}
+        refreshing={refreshingUsage}
+        onRefresh={() => refreshUsage()}
+        autostart={autostart}
+        onAutostart={(next) => {
+          setAutostart(next)
+          void window.cursorMonitor?.setAutostart?.(next)
+            .then((r) => {
+              if (typeof r?.autostart === 'boolean') setAutostart(r.autostart)
+            })
+            .catch(() => setAutostart(next))
+        }}
+        isElectron={isElectron}
+        onQuit={isElectron ? () => void window.cursorMonitor?.quit() : undefined}
       />
-
-      {account?.signedIn === false ? (
-        <p className="guide-chip danger">Cursor を開いてサインインしてください</p>
-      ) : usage?.guide ? (
-        <GuideChip usage={usage} />
-      ) : null}
-
-      {usage?.charts?.daily?.length ? (
-        <UsageMiniBars
-          daily={usage.charts.daily}
-          includedUsd={usage.spend.includedUsd}
-          limitUsd={usage.spend.limitUsd}
-        />
-      ) : (
-        <p className="chart-empty compact-empty">
-          {taskSummary === '静か' ? 'Cursor の14日グラフを準備中' : `Agents ${taskSummary}`}
-        </p>
-      )}
-
-      <div className="share-block" title={ramTitle}>
-        <div className="share-head">
-          <span>Cursor の RAM</span>
-          <span className="mono">
-            {metrics
-              ? `${sysMem.toFixed(0)}% · Cursor ${cursorMemPct.toFixed(0)}%`
-              : '…'}
-          </span>
-        </div>
-        <div className="share-track" aria-label={ramTitle}>
-          <span
-            className="seg cursor"
-            style={{ width: `${cursorMemPct}%` }}
-          />
-          <span className="seg other" style={{ width: `${otherMemPct}%` }} />
-          <span className="seg free" style={{ width: `${freeMemPct}%` }} />
-        </div>
-      </div>
-
-      {expanded && (
-        <div className="expanded-body">
-          <p className="status-line">{statusLine}</p>
-          {usage ? <BillingGuide usage={usage} /> : null}
-          <UsageCharts usage={usage} />
-          <div className="share-legend mono">
-            <span>
-              <i className="dot cursor" />
-              Cursor {formatBytes(metrics?.cursor.totalWorkingSetBytes || 0)}
-            </span>
-            <span>
-              <i className="dot other" />
-              他アプリ{' '}
-              {formatBytes(
-                Math.max(
-                  (metrics?.memory.usedBytes || 0) -
-                    (metrics?.cursor.totalWorkingSetBytes || 0),
-                  0,
-                ),
-              )}
-            </span>
-            <span>
-              <i className="dot free" />
-              空き {formatBytes(metrics?.memory.freeBytes || 0)}
-            </span>
-          </div>
-          <label className="autostart-row">
-            <input
-              type="checkbox"
-              checked={autostart}
-              onChange={(e) => {
-                const next = e.target.checked
-                setAutostart(next)
-                void window.cursorMonitor?.setAutostart?.(next)
-                  .then((r) => {
-                    if (typeof r?.autostart === 'boolean') setAutostart(r.autostart)
-                  })
-                  .catch(() => {
-                    setAutostart(next)
-                  })
-              }}
-            />
-            <span>ログイン時に自動起動</span>
-          </label>
-          <p className="support-row">
-            Cursor 専用 · 非公式
-            <button
-              type="button"
-              className="text-link"
-              onClick={() => openCursorLink(CURSOR_LINKS.pricing)}
-            >
-              年払いで約20%安
-            </button>
-            <button
-              type="button"
-              className="text-link"
-              onClick={() => openCursorLink(CURSOR_LINKS.github)}
-            >
-              ソース
-            </button>
-            <button
-              type="button"
-              className="text-link"
-              onClick={() => openCursorLink(CURSOR_LINKS.storeLegal)}
-            >
-              買い切り Store
-            </button>
-          </p>
-          <div className="expanded-actions">
-            <button
-              type="button"
-              className="text-btn"
-              disabled={refreshingUsage}
-              onClick={() => refreshUsage()}
-            >
-              {refreshingUsage ? '更新中…' : '再取得'}
-            </button>
-            {isElectron && (
-              <button
-                type="button"
-                className="text-btn quit-btn"
-                onClick={() => void window.cursorMonitor?.quit()}
-              >
-                終了
-              </button>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
