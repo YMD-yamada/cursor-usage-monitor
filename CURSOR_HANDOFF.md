@@ -1,32 +1,29 @@
 # CURSOR_HANDOFF
 
 ## Active claim (multi-session)
-- Session focus: Usageboard を起動し、GitHub リリースする
-- Last touch: 2026-09-07 21:27
+- Session focus: (none)
+- Last touch: 2026-09-07 21:36
 - Do not duplicate:
 
 ## Progress (source of truth)
 - Done:
-  - 詳しく画面の4タブを廃止。使用量・PC・セッション・グラフを1画面に重ねて表示
-  - ヘッダー ≡ メニューで表示項目のオンオフ
-  - 大小2サイズを廃止。常時 400×680
-  - リセット日・残り日数・1日あたりの使い切り目安を使用量ブロックに表示
-  - 重複を整理: 枠の図とセッション一覧をメニューから外す。一覧は実行中/待機のみ。グラフ詳細は推移ウィジェットに一本化
-  - typecheck + build + smoke 9/9
-- In progress: 常駐起動 + GitHub リリース
+  - 1画面 UI（タブ/大小サイズ廃止、リセット期限、重複整理）
+  - 常駐ウィジェット起動（Electron Usageboard for Cursor）
+  - GitHub **v1.3.0** https://github.com/YMD-yamada/cursor-usage-monitor/releases/tag/v1.3.0
+  - 法務ハブ / ポートフォリオの紹介文を 1.3.0 向けに更新
+- In progress: (none)
 - Next:
-  1. 起動
-  2. バージョン上げ・pack・gh release・掲載
+  1. [人間] Microsoft Partner Center に APPX を出すと Store 検索に出る（任意）
 
 ## Monetization
 - 稼働中（Microsoft Store 予定 ¥980 / 現行は GitHub Release）。Cursor 非公式・非提携
 
-## 確認チェック (2026-09-07)
-- [x] Security/legal OK（ローカル 127.0.0.1、秘密なし、exploitなし）
+## 確認チェック (2026-09-07 21:36)
+- [x] Security/legal OK（ローカル 127.0.0.1、秘密なし。Store 提出はしていない）
 - [x] No secrets in git/chat
-- [x] PC/NAS load OK（一時サーバーなし。resident :8787 はそのまま）
-- [x] なくす行為なし（常駐ウィジェットは終了していない）
-- [x] Smoke 9/9。cycleEnd は API から取得できることを確認
+- [x] PC/NAS load OK（pack 完了。Dockerなし）
+- [x] なくす行為なし
+- [x] GitHub v1.3.0 公開。ウィジェット起動中
 
 ## Project
 
