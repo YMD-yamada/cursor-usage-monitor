@@ -12,7 +12,7 @@
   --free: rgba(255, 255, 255, 0.08);
   --font: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
   --mono: 'Cascadia Mono', 'Segoe UI Mono', ui-monospace, monospace;
-  --radius: 16px;
+  --radius: 12px;
 }
 
 * {
@@ -47,8 +47,8 @@ button {
 .widget {
   position: relative;
   height: 100%;
-  margin: 4px;
-  padding: 10px 12px 12px;
+  margin: 2px;
+  padding: 6px 8px 10px;
   border-radius: var(--radius);
   border: 1px solid var(--line);
   background:
@@ -59,10 +59,12 @@ button {
     0 14px 36px rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   animation: pop 220ms ease;
   overflow: hidden;
   backdrop-filter: blur(18px);
+  container-type: size;
+  container-name: widget;
 }
 
 @keyframes pop {
@@ -89,10 +91,11 @@ button {
   gap: 6px;
   flex: 1;
   min-width: 0;
-  min-height: 24px;
-  padding: 2px 4px;
+  min-height: 20px;
+  padding: 0 2px;
   border-radius: 8px;
   cursor: grab;
+  touch-action: none;
 }
 
 .drag-handle:active {
@@ -128,6 +131,8 @@ button {
   display: flex;
   gap: 2px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 80;
 }
 
 .icon-btn {
@@ -316,11 +321,6 @@ button {
   margin: 4px 0 0;
   font-size: 10px;
   color: var(--muted);
-}
-
-.mini-bars {
-  display: grid;
-  gap: 3px;
 }
 
 .bucket-strip {
@@ -593,13 +593,14 @@ button {
 
 .usage-alert {
   margin: 0;
-  padding: 5px 8px;
-  border-radius: 8px;
+  padding: 3px 6px;
+  border-radius: 6px;
   font-size: 10px;
-  line-height: 1.35;
+  line-height: 1.25;
   color: var(--muted);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
 }
 
 .usage-alert.danger {
@@ -1370,17 +1371,27 @@ button {
 }
 
 .mini-bars {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 48px;
+  min-height: 28px;
 }
 
 .mini-area-svg {
   display: block;
   width: 100%;
-  height: 48px;
-  border-radius: 10px;
+  height: 100%;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(210, 228, 236, 0.08);
+}
+
+.mini-bars-chart {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 24px;
+  overflow: hidden;
 }
 
 .mini-bars-track {
@@ -1410,11 +1421,14 @@ button {
   gap: 8px;
   font-size: 9px;
   color: var(--muted);
-  min-height: 12px;
+  min-height: 0;
+  flex-shrink: 0;
 }
 
 .area-chart-wrap {
   position: relative;
+  width: 100%;
+  height: clamp(72px, 28cqh, 220px);
   border-radius: 10px;
   border: 1px solid rgba(170, 205, 220, 0.12);
   background: linear-gradient(
@@ -1428,7 +1442,7 @@ button {
 .area-chart-svg {
   display: block;
   width: 100%;
-  height: 128px;
+  height: 100%;
 }
 
 .chart-grid {
@@ -1619,9 +1633,11 @@ button {
 .autostart-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-size: 10px;
   color: var(--muted);
+  min-width: 0;
+  flex: 1;
 }
 
 .autostart-row input {
@@ -1650,14 +1666,15 @@ button {
 
 .expanded-actions {
   display: flex;
-  gap: 6px;
+  gap: 4px;
+  flex: 0 0 auto;
 }
 
 .text-btn {
-  flex: 1;
+  flex: 0 0 auto;
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 6px 8px;
+  padding: 3px 10px;
   font-size: 10px;
   color: var(--text);
   background: rgba(255, 255, 255, 0.03);
@@ -1964,7 +1981,7 @@ button {
 .dash-expanded {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
   min-height: 0;
   flex: 1;
 }
@@ -1974,6 +1991,7 @@ button {
   font-size: 10px;
   color: var(--muted);
   text-align: center;
+  flex-shrink: 0;
 }
 
 .dash-hint,
@@ -1992,42 +2010,64 @@ button {
 
 .dash-usage {
   display: grid;
-  gap: 6px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .dash-cycle {
   display: grid;
-  gap: 2px;
-  text-align: center;
+  gap: 1px;
+  text-align: left;
 }
 
 .dash-cycle-reset {
   margin: 0;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .dash-cycle-pace {
   margin: 0;
-  font-size: 10px;
+  font-size: 9px;
   color: var(--muted);
+  line-height: 1.3;
 }
 
 .dash-gauge-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  justify-items: center;
+  gap: 8px;
+  justify-items: stretch;
 }
 
 .dash-gauge {
   display: grid;
-  justify-items: center;
-  gap: 2px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  justify-items: start;
+  gap: 6px;
+  width: 100%;
 }
 
 .dash-gauge-ring {
   position: relative;
+  width: clamp(40px, 14cqw, 68px);
+  aspect-ratio: 1;
+  flex-shrink: 0;
+}
+
+.dash-gauge-copy {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.dash-gauge-ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .dash-gauge-ring .ring-track {
@@ -2061,80 +2101,90 @@ button {
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
   gap: 1px;
-  padding-top: 28%;
-}
-
-.dash-gauge.size-lg .dash-gauge-value {
-  padding-top: 30%;
+  padding-top: 0;
 }
 
 .dash-gauge-num {
   font-family: var(--mono);
-  font-size: 22px;
+  font-size: clamp(11px, 3.6cqw, 16px);
   font-weight: 700;
   letter-spacing: -0.04em;
 }
 
 .dash-gauge.size-lg .dash-gauge-num {
-  font-size: 26px;
+  font-size: clamp(11px, 3.6cqw, 16px);
 }
 
 .dash-gauge-unit {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 8px;
   color: var(--muted);
 }
 
 .dash-gauge-label {
   font-size: 11px;
   font-weight: 600;
+  line-height: 1.2;
 }
 
 .dash-gauge-hint {
   font-size: 9px;
   color: var(--muted);
+  line-height: 1.2;
 }
 
 .dash-system {
   display: grid;
-  gap: 10px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .dash-meter-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  gap: 6px;
 }
 
 .dash-meter-label {
   font-size: 11px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dash-meter-sub {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .dash-meter-pct {
-  font-size: 18px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text);
 }
 
 .dash-meter.size-lg .dash-meter-pct {
-  font-size: 22px;
+  font-size: 12px;
 }
 
 .dash-meter-track {
   display: flex;
-  height: 10px;
+  height: 8px;
   border-radius: 99px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.06);
 }
 
 .dash-meter.size-lg .dash-meter-track {
-  height: 14px;
+  height: 8px;
 }
 
 .dash-meter-track .seg {
@@ -2156,9 +2206,11 @@ button {
 }
 
 .dash-meter-legend {
-  margin-top: 3px;
-  font-size: 9px;
-  color: var(--muted);
+  display: none;
+}
+
+.dash-system-note {
+  display: none;
 }
 
 .dash-meter-legend .dot {
@@ -2174,16 +2226,14 @@ button {
   background: var(--accent);
 }
 
-.dash-system-note {
+.dash-sessions.compact {
+  display: block;
+}
+
+.dash-session-line {
   margin: 0;
   font-size: 10px;
   color: var(--muted);
-  text-align: center;
-}
-
-.dash-sessions.compact {
-  display: flex;
-  justify-content: center;
 }
 
 .dash-session-quiet {
@@ -2193,16 +2243,16 @@ button {
 
 .dash-session-chips {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .dash-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  gap: 3px;
+  padding: 2px 7px;
   border-radius: 99px;
   font-size: 10px;
   background: rgba(255, 255, 255, 0.04);
@@ -2227,16 +2277,16 @@ button {
 }
 
 .view-menu-wrap {
-  position: relative;
-  z-index: 30;
+  position: static;
 }
 
 .view-menu {
   position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  width: 228px;
-  max-height: min(420px, calc(100vh - 48px));
+  top: 32px;
+  right: 8px;
+  z-index: 50;
+  width: min(220px, calc(100% - 16px));
+  max-height: calc(100% - 40px);
   overflow: auto;
   padding: 6px;
   border-radius: 12px;
@@ -2267,6 +2317,14 @@ button {
   font-size: 12px;
   text-align: left;
   color: var(--text);
+}
+
+.view-menu-check span,
+.view-menu-item {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .view-menu-check:hover,
@@ -2323,9 +2381,15 @@ button {
 }
 
 .dash-session-list-wrap {
-  max-height: 148px;
+  max-height: min(112px, 22cqh);
   overflow: auto;
   scrollbar-width: thin;
+}
+
+.dash-sessions-block {
+  display: grid;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .dash-page {
@@ -2334,17 +2398,20 @@ button {
   overflow: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-right: 2px;
+  gap: 6px;
+  padding-right: 0;
   scrollbar-width: thin;
 }
 
 .dash-footer {
   flex-shrink: 0;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-top: 4px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding-top: 2px;
+  padding-right: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -2353,15 +2420,15 @@ button {
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 8px;
+  gap: 4px;
 }
 
 .dash-session-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -2371,8 +2438,8 @@ button {
 }
 
 .dash-session-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
   background: var(--muted);
@@ -2391,11 +2458,11 @@ button {
   flex: 1;
   min-width: 0;
   display: grid;
-  gap: 2px;
+  gap: 0;
 }
 
 .dash-session-project {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2508,4 +2575,166 @@ button {
 
 .is-expanded .widget-chrome {
   flex-shrink: 0;
+}
+
+.resize-edge {
+  position: absolute;
+  z-index: 70;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  touch-action: none;
+}
+
+.edge-n {
+  top: 0;
+  left: 10px;
+  right: 10px;
+  height: 7px;
+  cursor: ns-resize;
+}
+
+.edge-s {
+  bottom: 0;
+  left: 10px;
+  right: 10px;
+  height: 7px;
+  cursor: ns-resize;
+}
+
+.edge-e {
+  top: 10px;
+  right: 0;
+  bottom: 10px;
+  width: 7px;
+  cursor: ew-resize;
+}
+
+.edge-w {
+  top: 10px;
+  left: 0;
+  bottom: 10px;
+  width: 7px;
+  cursor: ew-resize;
+}
+
+.edge-ne {
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nesw-resize;
+}
+
+.edge-nw {
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+}
+
+.edge-sw {
+  bottom: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nesw-resize;
+}
+
+.edge-se {
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  background:
+    linear-gradient(
+      135deg,
+      transparent 46%,
+      rgba(210, 228, 236, 0.45) 46%,
+      rgba(210, 228, 236, 0.45) 58%,
+      transparent 58%
+    ),
+    linear-gradient(
+      135deg,
+      transparent 68%,
+      rgba(210, 228, 236, 0.35) 68%,
+      rgba(210, 228, 236, 0.35) 80%,
+      transparent 80%
+    );
+}
+
+.edge-se:hover,
+.edge-se:focus-visible {
+  background:
+    linear-gradient(
+      135deg,
+      transparent 46%,
+      rgba(62, 224, 208, 0.7) 46%,
+      rgba(62, 224, 208, 0.7) 58%,
+      transparent 58%
+    ),
+    linear-gradient(
+      135deg,
+      transparent 68%,
+      rgba(143, 212, 255, 0.55) 68%,
+      rgba(143, 212, 255, 0.55) 80%,
+      transparent 80%
+    );
+}
+
+@container widget (max-height: 380px) {
+  .dash-cycle-pace,
+  .dash-gauge-hint {
+    display: none;
+  }
+
+  .dash-page {
+    gap: 4px;
+  }
+
+  .dash-session-list-wrap {
+    max-height: 72px;
+  }
+}
+
+@container widget (max-width: 320px) {
+  .brand-text {
+    font-size: 10px;
+  }
+
+  .dash-gauge-label {
+    font-size: 10px;
+  }
+
+  .dash-cycle-pace,
+  .dash-meter-sub {
+    display: none;
+  }
+
+  .view-menu {
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-width: none;
+  }
+
+  .dash-cycle-reset {
+    font-size: 10px;
+  }
+}
+
+@container widget (max-width: 280px) {
+  .brand-text {
+    display: none;
+  }
+
+  .dash-gauge-copy {
+    display: none;
+  }
+
+  .dash-gauge-row {
+    gap: 4px;
+  }
 }

@@ -14,11 +14,13 @@ function BigBar({
   total,
   cursorShare,
   size,
+  detail,
 }: {
   label: string
   total: number
   cursorShare: number
   size: 'md' | 'lg'
+  detail?: string
 }) {
   const pct = clampPercent(total)
   const cursorBar = clampPercent(Math.min(cursorShare, pct))
@@ -28,16 +30,18 @@ function BigBar({
   return (
     <div className={`dash-meter size-${size}`}>
       <div className="dash-meter-head">
-        <span className="dash-meter-label">{label}</span>
+        <span className="dash-meter-label">
+          {label}
+          <span className="dash-meter-sub">
+            Cursor {cursorShare.toFixed(0)}%{detail ? ` · ${detail}` : ''}
+          </span>
+        </span>
         <span className="dash-meter-pct mono">{pct.toFixed(0)}%</span>
       </div>
       <div className="dash-meter-track" role="meter" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
         <span className="seg cursor" style={{ width: `${cursorBar}%` }} />
         <span className="seg other" style={{ width: `${otherBar}%` }} />
         <span className="seg free" style={{ width: `${freeBar}%` }} />
-      </div>
-      <div className="dash-meter-legend">
-        <span><i className="dot cursor" />Cursor {cursorShare.toFixed(0)}%</span>
       </div>
     </div>
   )
@@ -55,13 +59,14 @@ export function SystemMeters({
 
   return (
     <section className="dash-system" aria-label="PCリソース">
-      <BigBar label="メモリ" total={sysMem} cursorShare={cursorMemPct} size={size} />
+      <BigBar
+        label="メモリ"
+        total={sysMem}
+        cursorShare={cursorMemPct}
+        size={size}
+        detail={cursorBytes && cursorBytes > 0 ? formatBytes(cursorBytes) : undefined}
+      />
       <BigBar label="CPU" total={sysCpu} cursorShare={cursorCpuNorm} size={size} />
-      {size === 'lg' && cursorBytes != null && cursorBytes > 0 && (
-        <p className="dash-system-note mono">
-          Cursor 使用メモリ {formatBytes(cursorBytes)}
-        </p>
-      )}
     </section>
   )
 }

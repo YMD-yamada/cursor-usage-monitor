@@ -16,7 +16,7 @@ Not an official Cursor product. Do not claim Cursor affiliation, partnership, or
 非公式。Cursor の Usage 2プールを常駐表示します。
 
 **長い説明**  
-Usageboard は、Cursor を毎日使う人向けの非公式 Windows ウィジェットです。公式ダッシュボードと同じ2つのプール（Cursor Models と Other Models）を、エディタの横に常時出します。従量が ON かどうか、更新までの日数、Spending / Billing への案内も出します。
+Usageboard は、Cursor を毎日使う人向けの非公式 Windows ウィジェットです。公式ダッシュボードと同じ2つのプール（Cursor Models と Other Models）を、エディタの横に常時出します。ウィンドウは四辺・四隅からサイズ変更できます。従量が ON かどうか、更新までの日数、Spending / Billing への案内も出します。
 
 Cursor 公式製品ではありません。提携・アフィリエイトもありません（Cursor の紹介プログラムは公式に終了）。他の人の Usage は見えません。従量の切替やプラン変更は公式ページで行います。データは自社サーバーへ送りません。この PC の Cursor ログインで、cursor.com のダッシュボード API だけを呼びます。広告・解析ツール・アプリ内課金はありません。買い切りです。
 
@@ -31,7 +31,7 @@ Cursor, Usage, Cursor Models, 従量, ウィジェット, 開発者
 For Cursor users: your two Usage pools, always on.
 
 **Full description**  
-Usageboard is an unofficial Windows widget for people who live in Cursor. It shows your own Cursor Models and Other Models pools the same way the official dashboard does, plus on-demand status and one-tap Spending / Billing.
+Usageboard is an unofficial Windows widget for people who live in Cursor. It shows your own Cursor Models and Other Models pools the same way the official dashboard does, plus on-demand status and one-tap Spending / Billing. The window can be resized from any edge or corner.
 
 Not affiliated with Cursor or Anysphere. Cursor has no public affiliate program; this app does not add referral tracking. It cannot see another person’s Usage. No ads, no analytics, no in-app purchases. One-time purchase. Source is MIT on GitHub.
 
@@ -52,7 +52,7 @@ Cursor, usage, Cursor Models, on-demand, widget, developer
 ## Submission
 
 1. Partner Center で **Usageboard** を予約
-2. `npm run pack:store`（成果物は 1.2.0 の appx）
+2. `npm run pack:store`（成果物は 1.4.0 の appx）
 3. Packages に arm64 / x64 の `.appx` をアップロード
 4. 価格を ¥980（または $6.99）にして提出
 5. 公開 URL が付いたら `storeUrls.windows` を personal-site に追記

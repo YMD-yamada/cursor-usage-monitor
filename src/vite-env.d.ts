@@ -19,6 +19,8 @@ interface Window {
     setAutostart?: (enabled: boolean) => Promise<{ autostart: boolean }>
     startDrag?: () => void
     endDrag?: () => void
+    startResize?: (edge?: string) => void
+    endResize?: () => void
     openExternal: (url: string) => Promise<boolean>
     onExpanded: (callback: (value: boolean) => void) => () => void
   }

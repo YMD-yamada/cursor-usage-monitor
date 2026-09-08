@@ -31,27 +31,14 @@ export function SessionStrip({ tasks, compact = false }: Props) {
   ]
 
   if (compact) {
-    const active = chips.filter((x) => x.count > 0)
-    if (!active.length) {
-      return (
-        <section className="dash-sessions compact" aria-label="セッション">
-          <span className="dash-session-quiet">Agent なし</span>
-        </section>
-      )
-    }
+    const parts = chips
+      .filter((x) => x.count > 0)
+      .map((x) => `${x.label} ${x.count}`)
     return (
       <section className="dash-sessions compact" aria-label="セッション">
-        <div className="dash-session-chips">
-          {active.map((chip) => (
-            <span
-              key={chip.key}
-              className={`dash-chip tone-${chip.tone} has-count`}
-            >
-              <span className="dash-chip-count">{chip.count}</span>
-              <span className="dash-chip-label">{chip.label}</span>
-            </span>
-          ))}
-        </div>
+        <p className="dash-session-line">
+          {parts.length ? parts.join(' · ') : 'Agent なし'}
+        </p>
       </section>
     )
   }

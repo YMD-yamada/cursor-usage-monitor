@@ -69,7 +69,6 @@ export function CompactDashboard({
           otherExhausted={Boolean(usage?.breakdown?.otherModels?.exhausted)}
           loading={loadingUsage}
           signedIn={signedIn}
-          size="md"
           cycleEnd={usage?.guide?.current.cycleEnd || usage?.billing?.cycleEnd}
           cycleDaysLeft={cycleDaysLeft}
         />

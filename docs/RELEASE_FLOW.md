@@ -17,7 +17,7 @@ Shortcuts launch `electron.exe` with the app folder (never bare `electron.exe`, 
 | Channel | Status | URL |
 |---|---|---|
 | GitHub source | Public MIT | https://github.com/YMD-yamada/cursor-usage-monitor |
-| GitHub Releases | v1.3.0 installers | https://github.com/YMD-yamada/cursor-usage-monitor/releases/latest |
+| GitHub Releases | v1.4.0 installers | https://github.com/YMD-yamada/cursor-usage-monitor/releases/latest |
 | Portfolio | Listed | https://ymd-portfolio-site.pages.dev/ |
 | Store legal hub | Listed (development until Partner Center) | https://personal-site-taupe-gamma.vercel.app/apps/usageboard/ |
 | Microsoft Store | Human submit | Partner Center package is `Usageboard-*-win-*.appx` |

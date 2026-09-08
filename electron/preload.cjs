@@ -15,6 +15,8 @@ contextBridge.exposeInMainWorld('cursorMonitor', {
   openExternal: (url) => ipcRenderer.invoke('widget:openExternal', url),
   startDrag: () => ipcRenderer.send('widget:drag-start'),
   endDrag: () => ipcRenderer.send('widget:drag-end'),
+  startResize: (edge) => ipcRenderer.send('widget:resize-start', edge || 'se'),
+  endResize: () => ipcRenderer.send('widget:resize-end'),
   onExpanded: (callback) => {
     const listener = (_event, value) => callback(Boolean(value))
     ipcRenderer.on('widget:expanded', listener)

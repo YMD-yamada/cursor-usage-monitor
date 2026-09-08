@@ -21,7 +21,8 @@ const APP_ID = 'jp.ymd.usageboard'
 app.setName('Usageboard for Cursor')
 app.setAppUserModelId(APP_ID)
 
-const WINDOW_SIZE = { width: 400, height: 680 }
+const DEFAULT_SIZE = { width: 400, height: 680 }
+const MIN_SIZE = { width: 260, height: 240 }
 
 const EXTERNAL_ALLOW = [
   /^https:\/\/([\w-]+\.)?cursor\.com(\/|$)/i,
@@ -31,11 +32,14 @@ const EXTERNAL_ALLOW = [
 
 let serverProcess = null
 let mainWindow = null
+let windowCreating = false
 let tray = null
 let bootUrl = null
 let dragTimer = null
 let dragOffset = null
 let dragSize = null
+let resizeTimer = null
+let resizeSession = null
 
 function stopDrag() {
   if (dragTimer) {
@@ -46,8 +50,122 @@ function stopDrag() {
   dragSize = null
 }
 
-function currentSize() {
-  return WINDOW_SIZE
+function stopResize() {
+  if (resizeTimer) {
+    clearInterval(resizeTimer)
+    resizeTimer = null
+  }
+  resizeSession = null
+}
+
+function liveWindowSize() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const bounds = mainWindow.getBounds()
+    return { width: bounds.width, height: bounds.height }
+  }
+  return { ...DEFAULT_SIZE }
+}
+
+function sizeLimitsFor(display) {
+  const work = display.workArea
+  return {
+    minW: MIN_SIZE.width,
+    minH: MIN_SIZE.height,
+    maxW: Math.max(MIN_SIZE.width, work.width - 16),
+    maxH: Math.max(MIN_SIZE.height, work.height - 16),
+  }
+}
+
+function clampSize(width, height, display) {
+  const lim = sizeLimitsFor(display)
+  return {
+    width: Math.round(Math.min(lim.maxW, Math.max(lim.minW, width))),
+    height: Math.round(Math.min(lim.maxH, Math.max(lim.minH, height))),
+  }
+}
+
+const RESIZE_EDGES = new Set(['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'])
+
+function resizeBoundsFromEdge(session, point) {
+  const display = screen.getDisplayMatching({
+    x: session.x,
+    y: session.y,
+    width: session.width,
+    height: session.height,
+  })
+  const work = display.workArea
+  const lim = sizeLimitsFor(display)
+  const dx = point.x - session.originX
+  const dy = point.y - session.originY
+  const edge = RESIZE_EDGES.has(session.edge) ? session.edge : 'se'
+
+  let left = session.x
+  let top = session.y
+  let right = session.x + session.width
+  let bottom = session.y + session.height
+
+  if (edge.includes('e')) right = session.x + session.width + dx
+  if (edge.includes('s')) bottom = session.y + session.height + dy
+  if (edge.includes('w')) left = session.x + dx
+  if (edge.includes('n')) top = session.y + dy
+
+  if (right - left < lim.minW) {
+    if (edge.includes('w')) left = right - lim.minW
+    else right = left + lim.minW
+  }
+  if (bottom - top < lim.minH) {
+    if (edge.includes('n')) top = bottom - lim.minH
+    else bottom = top + lim.minH
+  }
+
+  left = Math.max(left, work.x)
+  top = Math.max(top, work.y)
+  right = Math.min(right, work.x + work.width)
+  bottom = Math.min(bottom, work.y + work.height)
+
+  if (right - left < lim.minW) {
+    if (edge.includes('w')) left = Math.max(work.x, right - lim.minW)
+    else right = Math.min(work.x + work.width, left + lim.minW)
+  }
+  if (bottom - top < lim.minH) {
+    if (edge.includes('n')) top = Math.max(work.y, bottom - lim.minH)
+    else bottom = Math.min(work.y + work.height, top + lim.minH)
+  }
+
+  return {
+    x: Math.round(left),
+    y: Math.round(top),
+    width: Math.round(Math.max(lim.minW, right - left)),
+    height: Math.round(Math.max(lim.minH, bottom - top)),
+  }
+}
+
+function applyResizeLimits(win) {
+  if (!win || win.isDestroyed()) return
+  const lim = sizeLimitsFor(screen.getDisplayMatching(win.getBounds()))
+  win.setMinimumSize(lim.minW, lim.minH)
+  win.setMaximumSize(lim.maxW, lim.maxH)
+}
+
+function freezeWindowSize(win, size) {
+  if (!win || win.isDestroyed()) return
+  win.setMinimumSize(size.width, size.height)
+  win.setMaximumSize(size.width, size.height)
+}
+
+function displayForBounds(bounds) {
+  const x = Number.isFinite(bounds?.x) ? bounds.x : 0
+  const y = Number.isFinite(bounds?.y) ? bounds.y : 0
+  return screen.getDisplayNearestPoint({ x, y })
+}
+
+function resolveStartSize(saved, display) {
+  const width = Number(saved?.width)
+  const height = Number(saved?.height)
+  if (Number.isFinite(width) && Number.isFinite(height)) {
+    return clampSize(width, height, display)
+  }
+  return clampSize(DEFAULT_SIZE.width, DEFAULT_SIZE.height, display)
 }
 
 function isAllowedExternal(url) {
@@ -75,6 +193,8 @@ function writeWindowState(bounds) {
         {
           x: bounds.x,
           y: bounds.y,
+          width: bounds.width,
+          height: bounds.height,
         },
         null,
         2,
@@ -86,26 +206,26 @@ function writeWindowState(bounds) {
   }
 }
 
-function lockSize(win, size) {
-  if (!win || win.isDestroyed()) return
-  win.setMinimumSize(size.width, size.height)
-  win.setMaximumSize(size.width, size.height)
-}
-
 function clampToWorkArea(bounds, size) {
-  const point = {
-    x: Number.isFinite(bounds?.x) ? bounds.x : 0,
-    y: Number.isFinite(bounds?.y) ? bounds.y : 0,
-  }
-  const display = screen.getDisplayNearestPoint(point)
+  const display = displayForBounds(bounds)
   const work = display.workArea
-  const width = size.width
-  const height = size.height
+  const clamped = clampSize(size.width, size.height, display)
+  const width = clamped.width
+  const height = clamped.height
   const maxX = work.x + Math.max(work.width - width - 8, 8)
   const maxY = work.y + Math.max(work.height - height - 8, 8)
+  const point = {
+    x: Number.isFinite(bounds?.x) ? bounds.x : work.x + 8,
+    y: Number.isFinite(bounds?.y) ? bounds.y : work.y + 8,
+  }
   const x = Math.min(Math.max(work.x + 8, Math.round(point.x)), maxX)
   const y = Math.min(Math.max(work.y + 8, Math.round(point.y)), maxY)
   return { x, y, width, height }
+}
+
+function persistWindowState(win = mainWindow) {
+  if (!win || win.isDestroyed()) return
+  writeWindowState(win.getBounds())
 }
 
 function ensureVisible() {
@@ -113,9 +233,9 @@ function ensureVisible() {
     if (bootUrl) createWindow(bootUrl)
     return
   }
-  const size = currentSize()
-  lockSize(mainWindow, size)
-  const next = clampToWorkArea(mainWindow.getBounds(), size)
+  applyResizeLimits(mainWindow)
+  const bounds = mainWindow.getBounds()
+  const next = clampToWorkArea(bounds, { width: bounds.width, height: bounds.height })
   mainWindow.setBounds(next)
   writeWindowState(next)
   mainWindow.setSkipTaskbar(false)
@@ -169,19 +289,33 @@ function startServer() {
   })
 }
 
+function bootLog(msg) {
+  try {
+    const file = path.join(app.getPath('userData'), 'boot.log')
+    fs.appendFileSync(file, `${new Date().toISOString()} ${msg}\n`)
+  } catch {
+    // ignore
+  }
+}
+
 function waitForServer(url, attempts = 60) {
   return new Promise((resolve, reject) => {
     let left = attempts
     const tick = () => {
       const req = http.get(url, (res) => {
         res.resume()
-        resolve()
+        if (res.statusCode === 200) resolve()
+        else retry()
       })
-      req.on('error', () => {
+      req.on('error', retry)
+      req.setTimeout(1200, () => {
+        req.destroy()
+      })
+      function retry() {
         left -= 1
         if (left <= 0) reject(new Error('API server did not start'))
         else setTimeout(tick, 250)
-      })
+      }
     }
     tick()
   })
@@ -392,7 +526,7 @@ function rebuildTrayMenu() {
       label: '右端にスナップ',
       click: () => {
         if (!mainWindow) return
-        placeOnRightEdge(mainWindow, currentSize())
+        placeOnRightEdge(mainWindow, liveWindowSize())
         writeWindowState(mainWindow.getBounds())
       },
     },
@@ -421,23 +555,46 @@ function rebuildTrayMenu() {
 }
 
 function createWindow(url) {
+  if (windowCreating) return
+  bootLog(`createWindow url=${url}`)
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    bootLog('createWindow reuse')
+    ensureVisible()
+    return
+  }
+  windowCreating = true
+  try {
+    createWindowBody(url)
+  } catch (error) {
+    bootLog(`createWindow error ${error && error.message}`)
+    console.error('createWindow failed', error)
+  } finally {
+    windowCreating = false
+  }
+}
+
+function createWindowBody(url) {
   const saved = readWindowState()
-  const size = currentSize()
+  const savedPos =
+    saved && Number.isFinite(saved.x) && Number.isFinite(saved.y) ? saved : null
+  const display = savedPos
+    ? screen.getDisplayNearestPoint({ x: savedPos.x, y: savedPos.y })
+    : screen.getPrimaryDisplay()
+  const size = resolveStartSize(saved, display)
   const appIcon = createAppIcon()
   mainWindow = new BrowserWindow({
     width: size.width,
     height: size.height,
-    minWidth: size.width,
-    minHeight: size.height,
-    maxWidth: size.width,
-    maxHeight: size.height,
-    show: false,
+    minWidth: MIN_SIZE.width,
+    minHeight: MIN_SIZE.height,
+    show: true,
     frame: false,
     transparent: true,
-    resizable: false,
+    resizable: true,
     maximizable: false,
     minimizable: true,
     fullscreenable: false,
+    thickFrame: true,
     skipTaskbar: false,
     alwaysOnTop: true,
     hasShadow: true,
@@ -449,14 +606,11 @@ function createWindow(url) {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      backgroundThrottling: false,
     },
   })
 
-  lockSize(mainWindow, size)
-  const savedPos = saved && Number.isFinite(saved.x) && Number.isFinite(saved.y) ? saved : null
-  const display = savedPos
-    ? screen.getDisplayNearestPoint({ x: savedPos.x, y: savedPos.y })
-    : screen.getPrimaryDisplay()
+  applyResizeLimits(mainWindow)
   const work = display.workArea
   const onScreen =
     savedPos &&
@@ -474,6 +628,7 @@ function createWindow(url) {
   mainWindow.setAlwaysOnTop(true, 'screen-saver')
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
   mainWindow.setMovable(true)
+  mainWindow.setResizable(true)
   mainWindow.setMenu(null)
 
   let revealed = false
@@ -483,17 +638,31 @@ function createWindow(url) {
     ensureVisible()
   }
   mainWindow.once('ready-to-show', reveal)
-  mainWindow.webContents.once('did-finish-load', () => {
+
+  let loaded = false
+  let loadTries = 0
+  const tryLoad = () => {
+    if (!mainWindow || mainWindow.isDestroyed() || loaded) return
+    if (loadTries >= 24) return
+    loadTries += 1
+    bootLog(`loadURL try=${loadTries} ${url}`)
+    mainWindow.loadURL(url)
+  }
+  mainWindow.webContents.on('did-finish-load', () => {
+    loaded = true
+    bootLog('did-finish-load')
     setTimeout(reveal, 50)
   })
-  mainWindow.webContents.once('did-fail-load', () => {
+  mainWindow.webContents.on('did-fail-load', (_event, code, desc) => {
+    bootLog(`did-fail-load ${code} ${desc}`)
+    setTimeout(tryLoad, 500)
     setTimeout(reveal, 50)
   })
   setTimeout(() => {
     if (!revealed) reveal()
-  }, 2000)
-
-  mainWindow.loadURL(url)
+  }, 1500)
+  tryLoad()
+  reveal()
 
   mainWindow.webContents.setWindowOpenHandler(({ url: target }) => {
     if (isAllowedExternal(target)) shell.openExternal(target)
@@ -512,7 +681,14 @@ function createWindow(url) {
   })
   mainWindow.on('blur', () => {
     stopDrag()
+    stopResize()
+    applyResizeLimits(mainWindow)
   })
+  mainWindow.on('moved', () => {
+    if (!dragTimer && !resizeTimer) applyResizeLimits(mainWindow)
+    persistWindowState()
+  })
+  mainWindow.on('resize', () => persistWindowState())
 
   // Close / × → hide to tray (stay resident)
   mainWindow.on('close', (event) => {
@@ -528,6 +704,7 @@ function createWindow(url) {
 }
 
 function createTray() {
+  if (tray) return
   tray = new Tray(createTrayIcon())
   tray.setToolTip('Usageboard for Cursor（常駐中）')
   rebuildTrayMenu()
@@ -562,7 +739,7 @@ function registerIpc() {
   ipcMain.handle('widget:toggleExpanded', () => ({ expanded: true }))
   ipcMain.handle('widget:snapRight', () => {
     if (mainWindow) {
-      placeOnRightEdge(mainWindow, currentSize())
+      placeOnRightEdge(mainWindow, liveWindowSize())
       writeWindowState(mainWindow.getBounds())
     }
     return true
@@ -599,12 +776,13 @@ function registerIpc() {
   ipcMain.on('widget:drag-start', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender)
     if (!win) return
+    stopResize()
     stopDrag()
     const cursor = screen.getCursorScreenPoint()
     const bounds = win.getBounds()
-    const size = currentSize()
-    lockSize(win, size)
-    dragSize = { width: size.width, height: size.height }
+    const size = { width: bounds.width, height: bounds.height }
+    freezeWindowSize(win, size)
+    dragSize = size
     dragOffset = {
       x: cursor.x - bounds.x,
       y: cursor.y - bounds.y,
@@ -638,6 +816,40 @@ function registerIpc() {
   ipcMain.on('widget:drag-end', () => {
     stopDrag()
     if (mainWindow && !mainWindow.isDestroyed()) {
+      applyResizeLimits(mainWindow)
+      writeWindowState(mainWindow.getBounds())
+    }
+  })
+
+  ipcMain.on('widget:resize-start', (event, edge) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win) return
+    stopDrag()
+    stopResize()
+    const cursor = screen.getCursorScreenPoint()
+    const bounds = win.getBounds()
+    resizeSession = {
+      edge: RESIZE_EDGES.has(edge) ? edge : 'se',
+      originX: cursor.x,
+      originY: cursor.y,
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height,
+    }
+    resizeTimer = setInterval(() => {
+      if (!resizeSession || win.isDestroyed()) {
+        stopResize()
+        return
+      }
+      const next = resizeBoundsFromEdge(resizeSession, screen.getCursorScreenPoint())
+      win.setBounds(next)
+    }, 16)
+  })
+  ipcMain.on('widget:resize-end', () => {
+    stopResize()
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      applyResizeLimits(mainWindow)
       writeWindowState(mainWindow.getBounds())
     }
   })
@@ -645,6 +857,7 @@ function registerIpc() {
 
 if (gotLock) {
   app.whenReady().then(async () => {
+    bootLog('whenReady')
     registerIpc()
 
     // Default: enable login autostart once for resident use
@@ -666,26 +879,50 @@ if (gotLock) {
       : `http://127.0.0.1:${PORT}`
 
     if (isDev) {
-      await waitForUrl('http://127.0.0.1:5173/')
-    } else {
-      try {
-        await waitForServer(`http://127.0.0.1:${PORT}/api/health`, 3)
-      } catch {
-        serverProcess = startServer()
-        await waitForServer(`http://127.0.0.1:${PORT}/api/health`)
-      }
+      waitForUrl('http://127.0.0.1:5173/').catch((error) => {
+        console.error('dev server wait failed', error)
+      })
+    } else if (!serverProcess) {
+      const health = `http://127.0.0.1:${PORT}/api/health`
+      const probe = http.get(health, (res) => {
+        res.resume()
+        bootLog(`health probe ${res.statusCode}`)
+        if (res.statusCode !== 200) serverProcess = startServer()
+      })
+      probe.on('error', () => {
+        bootLog('health probe error; startServer')
+        if (!serverProcess) serverProcess = startServer()
+      })
+      probe.setTimeout(400, () => {
+        probe.destroy()
+      })
     }
 
-    createTray()
+    try {
+      createTray()
+    } catch (error) {
+      console.error('tray failed', error)
+    }
+
     createWindow(bootUrl)
 
     app.on('activate', () => {
       showWidget()
     })
+  }).catch((error) => {
+    console.error('startup failed', error)
+    try {
+      createTray()
+    } catch {
+      // ignore
+    }
+    if (bootUrl) createWindow(bootUrl)
   })
 
   app.on('before-quit', () => {
     app.isQuitting = true
+    stopDrag()
+    stopResize()
     if (serverProcess) {
       try {
         serverProcess.kill()

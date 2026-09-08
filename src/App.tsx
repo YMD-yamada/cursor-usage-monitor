@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type PointerEvent, type ReactNode } from 'react'
 import { useMonitorData } from './hooks/useMonitorData'
 import { ExpandedDashboard } from './components/dashboard/ExpandedDashboard'
 import { ViewMenu } from './components/dashboard/ViewMenu'
@@ -11,6 +11,43 @@ import {
   type ViewPrefs,
   type ViewWidget,
 } from './lib/viewPrefs'
+
+const RESIZE_EDGES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'] as const
+type ResizeEdge = (typeof RESIZE_EDGES)[number]
+
+function bindResize(edge: ResizeEdge) {
+  return {
+    onPointerDown: (e: PointerEvent<HTMLButtonElement>) => {
+      if (!window.cursorMonitor?.startResize) return
+      if (e.button !== 0) return
+      e.preventDefault()
+      e.stopPropagation()
+      e.currentTarget.setPointerCapture(e.pointerId)
+      window.cursorMonitor.startResize(edge)
+    },
+    onPointerUp: () => window.cursorMonitor?.endResize?.(),
+    onPointerCancel: () => window.cursorMonitor?.endResize?.(),
+    onLostPointerCapture: () => window.cursorMonitor?.endResize?.(),
+  }
+}
+
+function ResizeHandles() {
+  return (
+    <>
+      {RESIZE_EDGES.map((edge) => (
+        <button
+          key={edge}
+          type="button"
+          className={`resize-edge edge-${edge}`}
+          tabIndex={-1}
+          title="ドラッグでサイズ変更"
+          aria-label="ウィンドウサイズを変更"
+          {...bindResize(edge)}
+        />
+      ))}
+    </>
+  )
+}
 
 function ChromeGlyph({
   children,
@@ -108,6 +145,7 @@ export default function App() {
 
   return (
     <div className="widget is-expanded">
+      {isElectron && <ResizeHandles />}
       <header className="widget-chrome">
         <div
           className="drag-handle"

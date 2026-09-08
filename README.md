@@ -20,6 +20,7 @@ Cursor 本体の契約は [cursor.com/pricing](https://cursor.com/pricing) の�
 ## What it does
 
 - 自分の Cursor Models / Other Models ％を常駐表示
+- ウィンドウは四辺・四隅でサイズ変更（小さく常駐可）
 - 従量 ON/OFF、更新までの日数
 - Spending / Billing / Pricing への公式ディープリンク
 - ローカルの「従量を使わない」運用メモ

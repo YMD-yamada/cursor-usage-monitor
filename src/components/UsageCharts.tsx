@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { DailyUsagePoint, ModelUsage, UsagePayload } from '../lib/format'
 import { formatTokens, formatUsd } from '../lib/format'
 
@@ -75,6 +75,26 @@ function buildDailyGeometry(
   return { points, costLine, costArea, eventsLine, maxCost, maxEvents, pad, baseline }
 }
 
+function useElementSize(fallback: { width: number; height: number }) {
+  const [node, setNode] = useState<HTMLDivElement | null>(null)
+  const [size, setSize] = useState(fallback)
+  useEffect(() => {
+    if (!node) return
+    const update = () => {
+      const width = Math.max(1, Math.round(node.clientWidth))
+      const height = Math.max(1, Math.round(node.clientHeight))
+      setSize((prev) =>
+        prev.width === width && prev.height === height ? prev : { width, height },
+      )
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [node])
+  return { ref: setNode, size }
+}
+
 /** Compact 14-day cost trend. */
 export function UsageMiniBars({
   daily,
@@ -82,11 +102,12 @@ export function UsageMiniBars({
   daily: DailyUsagePoint[]
 }) {
   const [hover, setHover] = useState<number | null>(null)
-  const width = 280
-  const height = 48
+  const { ref, size } = useElementSize({ width: 280, height: 48 })
+  const width = size.width
+  const height = size.height
   const geo = useMemo(
     () => buildDailyGeometry(daily, width, height, { top: 6, right: 4, bottom: 2, left: 4 }),
-    [daily],
+    [daily, width, height],
   )
 
   if (!daily.length) return null
@@ -101,6 +122,7 @@ export function UsageMiniBars({
       role="img"
       aria-label={`14日のコスト ${summary}`}
     >
+      <div className="mini-bars-chart" ref={ref}>
       <svg
         className="mini-area-svg"
         viewBox={`0 0 ${width} ${height}`}
@@ -143,6 +165,7 @@ export function UsageMiniBars({
           </g>
         ))}
       </svg>
+      </div>
       <div className="mini-bars-meta mono">
         <span>
           {active
@@ -162,8 +185,9 @@ export function UsageSparkline({ daily }: { daily: DailyUsagePoint[] }) {
 
 function DailyTrendChart({ daily }: { daily: DailyUsagePoint[] }) {
   const [hover, setHover] = useState<number | null>(null)
-  const width = 360
-  const height = 160
+  const { ref, size } = useElementSize({ width: 360, height: 160 })
+  const width = size.width
+  const height = size.height
   const geo = useMemo(
     () =>
       buildDailyGeometry(daily, width, height, {
@@ -172,7 +196,7 @@ function DailyTrendChart({ daily }: { daily: DailyUsagePoint[] }) {
         bottom: 18,
         left: 8,
       }),
-    [daily],
+    [daily, width, height],
   )
 
   const total = daily.reduce((sum, d) => sum + d.costUsd, 0)
@@ -193,7 +217,12 @@ function DailyTrendChart({ daily }: { daily: DailyUsagePoint[] }) {
           {peak?.costUsd ? ` · 峰 ${dayLabel(peak.date)}` : ''}
         </span>
       </div>
-      <div className="area-chart-wrap" role="img" aria-label="日別コスト面積グラフ">
+      <div
+        className="area-chart-wrap"
+        ref={ref}
+        role="img"
+        aria-label="日別コスト面積グラフ"
+      >
         <svg
           className="area-chart-svg"
           viewBox={`0 0 ${width} ${height}`}

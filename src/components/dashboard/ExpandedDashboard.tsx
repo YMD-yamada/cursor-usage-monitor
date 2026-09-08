@@ -82,7 +82,7 @@ export function ExpandedDashboard({
         />
       ) : (
         <div className="dash-page">
-          <p className="dash-meta mono">{meta}</p>
+          {!show('gauges') && <p className="dash-meta mono">{meta}</p>}
           {usage && <UsageAlert usage={usage} compact />}
           {!hasAny && (
             <p className="dash-hint">右上のメニューから、見たい項目を選んでください</p>
@@ -95,9 +95,9 @@ export function ExpandedDashboard({
               otherExhausted={Boolean(usage?.breakdown?.otherModels?.exhausted)}
               loading={loadingUsage}
               signedIn={signedIn}
-              size="lg"
               cycleEnd={cycleEnd}
               cycleDaysLeft={cycleDaysLeft}
+              metaLine={!loadingUsage && signedIn ? meta : null}
             />
           )}
           {show('system') && (
@@ -107,16 +107,16 @@ export function ExpandedDashboard({
               sysCpu={sysCpu}
               cursorCpuRaw={cursorCpuRaw}
               cursorBytes={metrics?.cursor.totalWorkingSetBytes}
-              size="lg"
+              size="md"
             />
           )}
           {show('sessions') && (
-            <>
+            <div className="dash-sessions-block">
               <SessionStrip tasks={tasks} compact />
               <div className="dash-session-list-wrap">
                 <SessionList tasks={tasks} hideEmpty />
               </div>
-            </>
+            </div>
           )}
           {show('charts') && <UsageCharts usage={usage} compact />}
         </div>
