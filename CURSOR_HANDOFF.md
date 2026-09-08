@@ -1,33 +1,33 @@
 # CURSOR_HANDOFF
 
 ## Active claim (multi-session)
-- Session focus: GitHub v1.4.0 リリース
-- Last touch: 2026-09-08 19:20
-- Do not duplicate: 同じ pack/release を別セッションで重ねない
+- Session focus: (idle)
+- Last touch: 2026-09-08 19:35
+- Do not duplicate: v1.4.0 は GitHub 公開済み。同じ pack を重ねない
 
 ## Progress (source of truth)
 - Done:
   - 1画面 UI（タブ/大小サイズ廃止、リセット期限、重複整理）
   - 常駐ウィジェット起動（Electron Usageboard for Cursor）
-  - GitHub **v1.4.0** 準備（版上げ・ノート。pack はこのあとのコミット後）
-  - 法務ハブ / ポートフォリオの紹介文を 1.3.0 向けに更新
+  - GitHub **v1.4.0** https://github.com/YMD-yamada/cursor-usage-monitor/releases/tag/v1.4.0
+  - 法務ハブ / ポートフォリオの紹介文を 1.4.0 向けに更新
   - ウィンドウ可変（既定 400×680、最小 260×240）。四辺・四隅でリサイズ。ゲージ／グラフが追従。サイズは `window.json` に保存
   - 余白を詰めた高密度レイアウト（ゲージ横並び、フッター1行、余り高さはグラフが使う）
   - 小さい窓でもメニューが枠内に収まる。端リサイズは上下左右＋四隅
-  - 起動不能を修正（`clampSize` 欠落で main が落ち、ウィンドウ未作成）。再起動済み・表示確認
-- In progress: GitHub v1.4.0 pack + release
+  - 起動不能を修正（`clampSize` 欠落で main が落ち、ウィンドウ未作成）
+- In progress: (none)
 - Next:
-  1. [人間] Microsoft Partner Center に APPX を出すと Store 検索に出る（任意）
+  1. [人間] Microsoft Partner Center に APPX を出すと Store 検索に出る（任意）。パッケージは Release の `.appx`
 
 ## Monetization
 - 稼働中（Microsoft Store 予定 ¥980 / 現行は GitHub Release）。Cursor 非公式・非提携
 
-## 確認チェック (2026-09-08 17:56)
-- [x] Security/legal OK（ローカル 127.0.0.1、秘密なし）
+## 確認チェック (2026-09-08 19:35)
+- [x] Security/legal OK（ローカル 127.0.0.1、秘密なし、Cursor 非公式の表記維持）
 - [x] No secrets in git/chat
-- [x] PC/NAS load OK（ウィジェット再起動。API health ok。renderer あり）
-- [x] なくす行為なし（起動修復のためのプロセス再起動のみ）
-- [x] 未コミット。ウィンドウ「Usageboard for Cursor」表示を確認
+- [x] PC/NAS load OK（pack 完了。常駐 Docker なし。C: 約 168GB 空き）
+- [x] なくす行為なし（無効化・アンインストールなし）
+- [x] smoke 9/9。GitHub v1.4.0 公開。法務ハブの誤った Timeboard 文面/URL を Usageboard に戻した
 
 ## Project
 
@@ -80,6 +80,7 @@ Default UX nudges: **no on-demand**, stretch base plan via Cursor Models, plan c
 
 ## Status
 
+- 2026-09-08: **v1.4.0** GitHub Release。可変ウィンドウ・高密度・起動修正。
 - 2026-09-08: 起動不能を修正（四辺リサイズ時に clampSize が消えて main が例外）。再起動し表示確認。
 - 2026-09-08: 小さい窓のメニュー欠けを修正。リサイズは四辺・四隅。
 - 2026-09-08: 余白を詰めた。ゲージは横にラベル、フッター1行、余り高さはグラフ。ウィンドウ可変は維持。
@@ -96,12 +97,12 @@ Default UX nudges: **no on-demand**, stretch base plan via Cursor Models, plan c
 - このアカウント: `pro_plus` / Pro+（$60/月）。Cursor Models ％と Other Models ％が公式の主表示。Included $ は会計（Pro+ の Other Models 下限 $70）。
 - 起動: スタート検索で **Usageboard for Cursor**（`Usageboard` でも可）。再登録は `npm run install:resident`。
 - Public GitHub MIT: https://github.com/YMD-yamada/cursor-usage-monitor
-- Releases v1.3.0 (setup/appx): https://github.com/YMD-yamada/cursor-usage-monitor/releases/latest
+- Releases v1.4.0 (setup/appx): https://github.com/YMD-yamada/cursor-usage-monitor/releases/latest
 - Portfolio: https://ymd-portfolio-site.pages.dev/
 - Store hub: https://personal-site-taupe-gamma.vercel.app/apps/usageboard/
 - Microsoft Store 本体の提出は Partner Center（人間必須）。APPX は Release にあり。
 
-- Store name **Usageboard for Cursor** 1.3.0. Persona: daily Windows Cursor user. Store ¥980. No Cursor affiliate.
+- Store name **Usageboard for Cursor** 1.4.0. Persona: daily Windows Cursor user. Store ¥980. No Cursor affiliate.
 
 - **Aligned with official 2026 dashboard**: primary display is two pools — **Cursor Models** (`autoPercentUsed`) and **Other Models** (`apiPercentUsed`). Included $ / bonus are secondary accounting only (official Usage no longer leads with a single combined % or $ for self-serve).
 
